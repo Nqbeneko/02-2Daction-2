@@ -371,7 +371,7 @@ bool UpdatePlayer(Player& player, Boss& boss, Map& map, float deltaTime)
             player.JumpAttackFlag = true;
         }
     }
-    else if (CheckHitKey(KEY_INPUT_X) && !player.AttackFlag_2 && player.AttackFlag && (player.AttackIntervalTimer_1 > 10 && player.AttackIntervalTimer_1 < 30) && !player.JumpAttackFlag_2 && !player.PrevAttackFlag)
+    else if (CheckHitKey(KEY_INPUT_X) && !player.AttackFlag_2 && player.AttackFlag && (player.AttackIntervalTimer_1 > 0 && player.AttackIntervalTimer_1 < 35) && !player.JumpAttackFlag_2 && !player.PrevAttackFlag)
     {
         player.AttackFlag_2 = true;
         if (!player.isGround)

@@ -153,13 +153,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			UpdateBossAttackCollision(Col_bossAttack1_L, Col_bossAttack1_R, Col_bossAttack2, boss);
 
 			UpdateAnimationPlayer(player, boss, map, deltaTime);
-			UpdateBoss(boss, soul, player);
-			UpdateAnimationBoss(boss, soul, deltaTime);
+			UpdateBoss(boss, soul, player,deltaTime);
+			
 			//------------------------------------------------------
 			// ï`âÊèàóù
 			//------------------------------------------------------		
-			DrawPlayer(player);
+			
 			DrawBoss(boss, soul, player);
+			DrawPlayer(player);
 			DrawFps();
 			DrawPlayerUI(player);
 			DrawBossUI(boss);

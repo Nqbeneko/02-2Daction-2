@@ -4,7 +4,7 @@
 #include"Boss.h"
 #include"screen.h"
 
-const int BossHP = 50;
+const int BossHP = 30;
 const float ANGLE = 45.0f;
 const float BossSpeed = 2.0f;
 
@@ -18,27 +18,51 @@ bool OneHit2 = false;
 
 void InitBoss(Boss& boss)
 {
-    LoadDivGraph("img/idle2.png", IdleAnimBoss, IdleAnimBossX, IdleAnimBossY, 100, 100, boss.BossGraph[0]);
-    LoadDivGraph("img/attacking.png", AttackAnimBoss, AttackAnimBossX, AttackAnimBossY, 100, 100, boss.BossGraph[1]);
-    LoadDivGraph("img/skill1.png", SkillAnimBoss, SkillAnimBossX, SkillAnimBossY, 100, 100, boss.BossGraph[2]);
-    LoadDivGraph("img/summon.png", SummonAnimBoss, SummonAnimBossX, SummonAnimBossY, 100, 100, boss.BossGraph[3]);
+    LoadDivGraph("img/Boss/idle2.png", IdleAnimBoss, IdleAnimBossX, IdleAnimBossY, 100, 100, boss.BossGraph[0]);
+    LoadDivGraph("img/Boss/attacking.png", AttackAnimBoss, AttackAnimBossX, AttackAnimBossY, 100, 100, boss.BossGraph[1]);
+    LoadDivGraph("img/Boss/skill1.png", SkillAnimBoss, SkillAnimBossX, SkillAnimBossY, 100, 100, boss.BossGraph[2]);
+    LoadDivGraph("img/Boss/summon.png", SummonAnimBoss, SummonAnimBossX, SummonAnimBossY, 100, 100, boss.BossGraph[3]);
+    LoadDivGraph("img/Boss/PreliminaryAction.png", IdleAnimBoss, IdleAnimBossX, IdleAnimBossY, 100, 100, boss.BossGraph[4]);
 
     boss.w = BossChipSize;
     boss.h = BossChipSize;
 	boss.pos = VGet(668 + boss.w * 0.5f, 220 + boss.h * 0.5f, 0);
 	boss.direction = VGet(0, 0, 0);
     boss.center = VGet(ScreenWidth / 2, 0, 0);
-
     boss.HP = BossHP;
+
+    boss.state = BossState::Idele;
+
+    // 行動が始まったかどうかのフラグ
+    boss.Idle_ON = false;
+    boss.Attack_ON = false;
+    boss.Rush_ON = false;
+    boss.Summon_ON = false;
+
+    boss.EnemyToPlayer = VGet(0, 0, 0);
+
+    
 
     boss.Angle = ANGLE;
     boss.radius = 0;
     boss.MoveArcFlag = false;
 
+    //通常攻撃関連
+   
     boss.AttackFlag = false;
+    boss.HitAttack = false;
     boss.RigorTime = 0;
+    boss.PreliminaryActionFlag = false;
+    boss.PreliminaryActionTimer = 0;
+
+    //突進攻撃関連
+    boss.PastPlayerPos = VGet(0, 0, 0);
+    boss.Conflict = false;
+    boss.RushTimer = 0;
+    boss.RushCount = 0;
 
 
+    //アニメーション関連
     boss.RightMove = false;
     boss.moveSpeed = BossSpeed;
     boss.animTimer = 0;
@@ -51,11 +75,26 @@ void InitBoss(Boss& boss)
    
 }
 
-void UpdateBoss(Boss& boss, Soul& soul, Player& player)
+void InitBoss(Boss& boss)
+{
+
+}
+
+void UpdateBoss(Boss& boss, Soul& soul, Player& player, float deltaTime)
 {
     VECTOR direction = VGet(0, 0, 0);
-    //MoveArc(boss);
-    MoveAttack(boss, player);
+
+    BossState PastState = boss.state;
+
+    ControlBoss(boss);
+
+    if (PastState != boss.state)
+    {
+        boss.Idle_ON = false;
+        boss.Attack_ON = false;
+        boss.Rush_ON = false;
+        boss.Summon_ON = false;
+    }
 
     if (player.pos.x > boss.pos.x && boss.RigorTime <= 0)
     {
@@ -64,6 +103,41 @@ void UpdateBoss(Boss& boss, Soul& soul, Player& player)
     else if (player.pos.x < boss.pos.x && boss.RigorTime <= 0)
     {
         boss.RightMove = true;
+    }
+    
+    switch (boss.state)
+    {
+    case BossState::Idele:
+        UpdateBossIdle(boss, deltaTime);
+        break;
+
+    case BossState::Attack:
+        UpdateBossAttack(boss, player, deltaTime);
+        break;
+
+    case BossState::Rush:
+        
+        
+        UpdateBossRush(boss, player, deltaTime);
+        break;
+
+    case BossState::Summon:
+        UpdateBossSummon(boss, deltaTime);
+        break;
+
+    case BossState::Dead:
+        break;
+    default:
+        break;
+    }
+   
+
+
+
+    //硬直時間を減らす
+    if (boss.RigorTime > 0)
+    {
+        boss.RigorTime -= 1;
     }
 
     //------------------------------------
@@ -95,7 +169,7 @@ void UpdateBoss(Boss& boss, Soul& soul, Player& player)
     }
 }
 
-void UpdateAnimationBoss(Boss& boss, Soul& soul, float deltaTime)
+void UpdateAnimationBoss(Boss& boss, float deltaTime)
 {
 
     //-------------------------------------------------------------------
@@ -118,18 +192,6 @@ void UpdateAnimationBoss(Boss& boss, Soul& soul, float deltaTime)
         if (boss.animNowPattern == boss.animPattern)
         {
             boss.animNowPattern = 0;
-        }
-    }
-    //周りの魂アニメーション
-    soul.animTimer += deltaTime;
-    if (soul.animTimer > 1.0f / soul.animPattern)
-    {
-
-        soul.animTimer = 0.0f;
-        soul.animNowPattern++;
-        if (soul.animNowPattern == soul.animPattern)
-        {
-            soul.animNowPattern = 0;
         }
     }
 
@@ -233,30 +295,63 @@ void MoveArc(Boss& boss)
     }
 }
 
-void MoveAttack(Boss& boss, Player& player)
+void UpdateBossIdle(Boss& boss, float deltaTime)
 {
-    VECTOR EnemyToPlayer = VSub(player.pos, boss.pos);
+    if (!boss.Idle_ON)
+    {
+        boss.animNowType = Idle;
+        boss.animPattern = IdleAnimBoss;
+    }
+
+    UpdateAnimationBoss(boss, deltaTime);
+
+    
+}
+
+void UpdateBossAttack(Boss& boss, Player& player,float deltaTime)
+{
+    if (!boss.Attack_ON)
+    {
+        boss.animNowType = Idle;
+        boss.animPattern = IdleAnimBoss;
+        boss.Attack_ON = true;
+    }
+
+    boss.EnemyToPlayer = VSub(player.pos, boss.pos);
 
     if (boss.RigorTime <= 0)
     {
-        boss.direction = VNorm(EnemyToPlayer);
+        boss.direction = VNorm(boss.EnemyToPlayer);
 
         VECTOR velocity = VScale(boss.direction, boss.moveSpeed);
 
         boss.pos = VAdd(boss.pos, velocity);
     }
     
-
     //一定範囲内にプレイヤーが入ったら攻撃をする
-    if (boss.RigorTime <= 0 && (player.pos.x - boss.pos.x) < 100 && (player.pos.x - boss.pos.x) > -100 && (player.pos.y - boss.pos.y) < 50 && (player.pos.y - boss.pos.y) > -50)
+    //アニメーションの変更
+    if (!boss.PreliminaryActionFlag && boss.RigorTime <= 0 && (player.pos.x - boss.pos.x) < 100 && (player.pos.x - boss.pos.x) > -100 && (player.pos.y - boss.pos.y) < 50 && (player.pos.y - boss.pos.y) > -50)
     {
-        boss.AttackFlag = true;
-        boss.RigorTime = 200;
+        /*boss.AttackFlag = true;
+        boss.RigorTime = 500;*/
+        boss.RigorTime = 300;
+
+        boss.PreliminaryActionFlag = true;
+        boss.PreliminaryActionTimer = 60;
+        boss.animNowType = PreliminaryAction;
+        boss.animPattern = PreliminaryActionAnimBoss;
     }
 
-    //アニメーションの変更
-    if (boss.AttackFlag)
+    boss.PreliminaryActionTimer -= 1;
+    if (boss.PreliminaryActionTimer <= 0)
     {
+        boss.PreliminaryActionTimer = 0;
+    }
+
+    if (boss.PreliminaryActionFlag && boss.PreliminaryActionTimer <= 0)
+    {
+        boss.PreliminaryActionFlag = false;
+        boss.AttackFlag = true;
         boss.animNowType = Attack;
         boss.animPattern = AttackAnimBoss;
     }
@@ -273,15 +368,130 @@ void MoveAttack(Boss& boss, Player& player)
     {
         boss.RigorTime -= 1;
     }
+
+    UpdateAnimationBoss(boss, deltaTime);
+
 }
 
-void MoveSkill(Boss& boss, Player& player)
+void UpdateBossRush(Boss& boss, Player& player, float deltaTime)
 {
-    VECTOR EnemyToPlayer = VSub(player.pos, boss.pos);
+    if (!boss.Rush_ON && boss.RigorTime <= 0)
+    {
+        boss.EnemyToPlayer = VSub(player.pos, boss.pos);
+        boss.PastPlayerPos = player.pos;
+        boss.Rush_ON = true;
+        boss.RushCount += 1;
+
+        boss.animNowType = Skill;
+        boss.animPattern = SkillAnimBoss;
+
+        if (boss.RushCount > 2)
+        {
+            boss.state = BossState::Idele;
+            boss.RushCount = 0;
+        }
+    }
+
+    if (boss.Rush_ON && boss.RigorTime <= 0)
+    {
+        //正規化
+        if (VSize(boss.EnemyToPlayer) > 0)
+        {
+            boss.direction = VNorm(boss.EnemyToPlayer);
+        }
+        //移動
+        VECTOR velocity = VScale(boss.direction, boss.moveSpeed * 3);
+        boss.pos = VAdd(boss.pos, velocity);
+    }
+    
+    /*if (boss.pos.x < GameScreenWidthL || boss.pos.y < 0 || boss.pos.x > GameScreenWidthR || )
+    {
+       
+        boss.Conflict = true;
+        boss.Rush_ON = false;
+    }*/
+
+    if (boss.pos.x < GameScreenWidthL)
+    {
+        boss.pos.x = GameScreenWidthL + BossChipSize * 0.5f;
+        boss.Conflict = true;
+        //boss.Rush_ON = false;
+    }
+    else if (boss.pos.x > GameScreenWidthR)
+    {
+        boss.pos.x = GameScreenWidthR - BossChipSize * 0.5f;
+        boss.Conflict = true;
+        //boss.Rush_ON = false;
+    }
+    else if (boss.pos.y < 0)
+    {
+        boss.pos.y = BossChipSize * 0.5f;
+        boss.Conflict = true;
+        //boss.Rush_ON = false;
+    }
+    else if (boss.pos.y > GameScreenHeight)
+    {
+        boss.pos.y = GameScreenHeight - BossChipSize * 0.5f;
+        boss.Conflict = true;
+        //boss.Rush_ON = false;
+    }
+
+    if (boss.Conflict)
+    {
+        boss.RushTimer += 1;
+        if (boss.RushTimer >= 5)
+        {
+            boss.animNowType = Idle;
+            boss.animPattern = IdleAnimBoss;
+            boss.RigorTime = 100;
+            boss.RushTimer = 0;
+            boss.Conflict = false;
+            boss.Rush_ON = false;
+        }
+    }
+
+    UpdateAnimationBoss(boss, deltaTime);
+
+
+}
+
+void UpdateBossSummon(Boss& boss, float deltaTime)
+{
+
+
+    UpdateAnimationBoss(boss, deltaTime);
 
 }
 
 void ControlHP(Boss& boss)
 {
+
+}
+
+//デバック用
+void ControlBoss(Boss& boss)
+{
+    if (CheckHitKey(KEY_INPUT_1))
+    {
+        boss.state = BossState::Idele;
+    }
+    if (CheckHitKey(KEY_INPUT_2))
+    {
+        boss.state = BossState::Attack;
+    }
+    if (CheckHitKey(KEY_INPUT_3))
+    {
+        boss.state = BossState::Rush;
+    }
+    if (CheckHitKey(KEY_INPUT_4))
+    {
+        boss.state = BossState::Summon;
+    }
+    if (CheckHitKey(KEY_INPUT_5))
+    {
+        boss.state = BossState::Dead;
+    }
+
+    DrawFormatString(50, 50, GetColor(255, 0, 0), "%d", boss.RushCount);
 
 }

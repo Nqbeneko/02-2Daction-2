@@ -8,13 +8,15 @@
 #include"map.h"
 #include"Boss.h"
 #include"collision.h"
+#include"Debug.h"
+#include"Efect.h"
+
 
 static int mStartTime;      //測定開始時刻
 static int mCount;          //カウンタ
 static float mFps;          //fps
 static const int N = 60;	//平均を取るサンプル数
 static const int FPS = 60;	//設定したFPS
-
 
 
 bool Update() {
@@ -45,7 +47,7 @@ void Wait() {
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
-
+	XINPUT_STATE input;
 	// DxLib初期化
 	SetGraphMode(ScreenWidth, ScreenHeight, 16);
 	ChangeWindowMode(false);
@@ -55,10 +57,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	}
 	SetDrawScreen(DX_SCREEN_BACK);
 
+	
+
+
 	Player player;
 	Map map;
 	Boss boss;
-	Soul soul;
+	Soul soul[MaxSoulNum];
+	Efect bossEfect;
 
 	Collision Col_playerAttack_L;
 	Collision Col_playerAttack_R;
@@ -89,8 +95,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	InitPlayer(player);
 	InitMap(map);
 	InitBoss(boss);
+	InitSoul(soul);
 	InitPlayerAttackCollision(Col_playerAttack_L, Col_playerAttack_R);
 	InitBossAttackCollision(Col_bossAttack1_L, Col_bossAttack1_R,Col_bossAttack2);
+	InitBossEfect(bossEfect);
 
 
 	int nowCount, prevCount;
@@ -101,6 +109,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	while (ProcessMessage() == 0 && ClearDrawScreen() == 0 && CheckHitKey(KEY_INPUT_ESCAPE) == 0)
 	{
 		ClearDrawScreen();
+		//コントローラーの入力状態を取得
+		GetJoypadXInputState(DX_INPUT_PAD1, &input);
+
+   		
+
+
 		// deltaTime計測
 		float deltaTime;
 		nowCount = GetNowCount();
@@ -122,7 +136,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 				DrawString(ScreenWidth / 2 - 30 / 2 * 21 / 2, ScreenHeight * 2 / 3, "Press SPACE to start.", GetColor(238, 130, 238));
 			}
 			
-			if (CheckHitKey(KEY_INPUT_SPACE))
+			if (CheckHitKey(KEY_INPUT_SPACE) || input.Buttons[XINPUT_BUTTON_START])
 			{
 				sceneSelect.mode = GameMode::GAME;
 				//------------------------------------------------------
@@ -131,8 +145,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 				InitPlayer(player);
 				InitMap(map);
 				InitBoss(boss);
+				InitSoul(soul);
 				InitPlayerAttackCollision(Col_playerAttack_L, Col_playerAttack_R);
 				InitBossAttackCollision(Col_bossAttack1_L, Col_bossAttack1_R, Col_bossAttack2);
+				InitBossEfect(bossEfect);
 			}
 			break;
 
@@ -140,7 +156,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			break;
 
 		case GameMode::GAME:
-
+			
 			//------------------------------------------------------
 			// 更新処理
 			//------------------------------------------------------
@@ -152,19 +168,25 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			UpdatePlayerAttackCollision(Col_playerAttack_L, Col_playerAttack_R, player);
 			UpdateBossAttackCollision(Col_bossAttack1_L, Col_bossAttack1_R, Col_bossAttack2, boss);
 
-			UpdateAnimationPlayer(player, boss, map, deltaTime);
-			UpdateBoss(boss, soul, player,deltaTime);
-			
+			UpdateAnimationPlayer(player, boss, map, deltaTime,input);
+			UpdateBoss(boss,soul, player,deltaTime);
+			BossRushPreliminaryAction(bossEfect, boss);
+
+			UpdateAnimationSoul(soul, deltaTime);
 			//------------------------------------------------------
 			// 描画処理
 			//------------------------------------------------------		
 			
-			DrawBoss(boss, soul, player);
+			DrawBoss(boss);
+			DrawSoul(soul);
+
 			DrawPlayer(player);
 			DrawFps();
 			DrawPlayerUI(player);
 			DrawBossUI(boss);
+			DrawBossEfect(bossEfect, boss);
 
+			SelectDrawManageUI(player, boss, soul);
 			if (player.HitAttack)
 			{
 				DrawFormatString(50, 50, GetColor(255, 255, 255), "ヒットー");
@@ -183,19 +205,34 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 				sceneSelect.mode = GameMode::CREAR;
 			}
 
+			//------------------------------------------------------
+			// デバック用
+			//------------------------------------------------------
+			
+			//DrawBossPosition(boss);
+
 			break;
 
 		case GameMode::OVER:
 			//タイトル画面を表示
 			SetFontSize(50);
 			DrawString(ScreenWidth / 2 - 50 / 2 * 12 / 2, ScreenHeight / 3, "GAME OVER", GetColor(255, 0, 0));
-			
+			if (CheckHitKey(KEY_INPUT_R) || input.Buttons[XINPUT_BUTTON_BACK])
+			{
+				sceneSelect.mode = GameMode::TITLE;
+			}
 			break;
 
 		case GameMode::CREAR:
 			//タイトル画面を表示
 			SetFontSize(50);
-			DrawString(ScreenWidth / 2 - 50 / 2 * 12 / 2, ScreenHeight / 3, "GAME CREAR", GetColor(0, 255, 0));
+			DrawString(ScreenWidth / 2 - 50 / 2 * 12 / 2, ScreenHeight / 3, "GAME CLEAR", GetColor(0, 255, 0));
+			
+			if (CheckHitKey(KEY_INPUT_R) || input.Buttons[XINPUT_BUTTON_BACK])
+			{
+				sceneSelect.mode = GameMode::TITLE;
+			}
+			
 			break;
 		default:
 			break;

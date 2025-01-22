@@ -6,28 +6,7 @@
 #include "Boss.h"
 #include <math.h>
       
-//　定数
-const int INITNUM = 0;                  //初期化用の０
-const int AttackCoolTime_1 = 30;        //攻撃１クールタイム
-const int AttackCoolTime_2 = 30;        //攻撃２クールタイム
-const int AttackWaitingTime_1 = 50;     //攻撃２へつなげるまでの待ち時間
-const int AttackWaitingTime_2 = 35;     //攻撃１が使えるようになるまでの待ち時間
 
-const float PlayerCollisionX = 10.0f;   //プレイヤーのX軸当たり判定範囲
-const float PlayerCollisionY = 16.0f;   //プレイヤーのY軸当たり判定範囲
-
-const int DashCoolTime = 50;            //ダッシュクールタイム
-const int DashDistance = 100;           //ダッシュ距離
-
-const int InvincibleTime = 100;         //無敵時間
-
-//UI関係
-const int DrawHpPositionX = 30;
-const int DrawHpPositionY = 400;
-const int HP1GageSizeX = 30;
-const int HP1GageSizeY = 10;
-
-const int TimerDecrease = 1;            //タイマーの時間を減らす量
 
 bool HitEnemyAttack = false;	//敵の攻撃に当たったかどうか
 
@@ -46,7 +25,9 @@ void InitPlayer(Player& player)
     player.fallSpeed = 0.0f;
 
     //------------------------------
-    player.HP = 5;
+    player.HP = MAXHP;
+    player.HpGraph = LoadGraph("img/mark_heart_red.png");
+    player.HpGraphBack = LoadGraph("img/mark_heart_black.png");
 
     //-----------------------------
     // 当たり判定に関する変数
@@ -98,18 +79,21 @@ void InitPlayer(Player& player)
     player.Move_L = false;
     player.Move_R = false;
 
-    LoadDivGraph("img/DarkSamurai (64x64).png", PlayerImg_Xnum * PlayerImg_Ynum, PlayerImg_Xnum, PlayerImg_Ynum, 64, 64, player.PlayerAnimation);
+    LoadDivGraph("img/player/DarkSamurai.png", PlayerImg_Xnum * PlayerImg_Ynum, PlayerImg_Xnum, PlayerImg_Ynum, 64, 64, player.PlayerAnimation);
+    LoadDivGraph("img/player/DarkSamurai_damage.png", PlayerImg_Xnum * PlayerImg_Ynum, PlayerImg_Xnum, PlayerImg_Ynum, 64, 64, player.PlayerAnimationDamage);
 
 }
+#
 
 //プレイヤーアニメーション
-void UpdateAnimationPlayer(Player& player, Boss& boss, Map&map, float deltaTime)
+void UpdateAnimationPlayer(Player& player, Boss& boss, Map&map, float deltaTime, XINPUT_STATE &input)
 {
     
     //---------------------------------
     // アニメーション計算
     //---------------------------------
-    bool isMove = UpdatePlayer(player,boss,map, deltaTime);
+    bool isMove = UpdatePlayer(player,boss,map, deltaTime,input);
+
     //-----------------------------------------------------
     // 操作されていないときIdleアニメーションに変更
     //----------------------------------------------------
@@ -284,25 +268,44 @@ void DrawPlayer(Player &player)
             DrawTurnGraph(static_cast<int>(player.pos.x - player.w), static_cast<int>(player.pos.y - player.h), player.PlayerAnimation[player.animNowIndex], TRUE);
         }
     }
+    else
+    {
+        //キャラクターの描画
+        if (!player.Graph_LR)
+        {
+            DrawGraph(static_cast<int>(player.pos.x - player.w), static_cast<int>(player.pos.y - player.w), player.PlayerAnimationDamage[player.animNowIndex], TRUE);
+        }
+        if (player.Graph_LR)
+        {
+            DrawTurnGraph(static_cast<int>(player.pos.x - player.w), static_cast<int>(player.pos.y - player.h), player.PlayerAnimationDamage[player.animNowIndex], TRUE);
+        }
+    }
 
     
-    //DrawBox(player.pos.x - 32.0f, player.pos.y - 16.0f, player.pos.x + 32.0f, player.pos.y + 16.0f, GetColor(255, 125, 0), FALSE);
+    //
     //DrawCircle(player.pos.x, player.pos.y, 1, GetColor(255, 255, 255), TRUE);
-    DrawBox(static_cast<int>(player.pos.x - PlayerCollisionX), static_cast<int>(player.pos.y - PlayerCollisionY),static_cast<int>(player.pos.x + PlayerCollisionX), static_cast<int>(player.pos.y + PlayerCollisionY), GetColor(0, 255, 0), FALSE);
+   
 
 }
 
 //プレイヤー関連UI描画
 void DrawPlayerUI(Player& player)
 {
-    DrawBox(DrawHpPositionX - 1, DrawHpPositionY - 1, DrawHpPositionX + 1 + HP1GageSizeX * 5, DrawHpPositionY + HP1GageSizeY + 1, GetColor(255, 255, 255), TRUE);
-    DrawBox(DrawHpPositionX, DrawHpPositionY, DrawHpPositionX + HP1GageSizeX * player.HP, DrawHpPositionY + HP1GageSizeY, GetColor(0, 255, 0), TRUE);
+    for (int i = 0; i < MAXHP; i++)
+    {
+        DrawRotaGraph3(DrawHpPositionX + 20 * i, DrawHpPositionY + 15, HPGraphSizeX / 2, HPGraphSizeY / 2, 0.04, 0.04, 0, player.HpGraphBack, TRUE, FALSE);
+
+    }
+    for (int i = 0; i < player.HP; i++)
+    {
+        DrawRotaGraph3(DrawHpPositionX + 20 * i, DrawHpPositionY + 15, HPGraphSizeX / 2, HPGraphSizeY / 2, 0.04, 0.04, 0, player.HpGraph, TRUE, FALSE);
+    }
     SetFontSize(10);
     DrawFormatString(DrawHpPositionX, DrawHpPositionY - 11, GetColor(255, 255, 255), "PLAYER HP");
 }
 
 //プレイヤー更新
-bool UpdatePlayer(Player& player, Boss& boss, Map& map, float deltaTime)
+bool UpdatePlayer(Player& player, Boss& boss, Map& map, float deltaTime, XINPUT_STATE input)
 {
     bool isMove = false;
     bool jump = false;
@@ -314,7 +317,7 @@ bool UpdatePlayer(Player& player, Boss& boss, Map& map, float deltaTime)
        // 左右移動
        //-----------------------------------------------------------------------------
        //左
-    if (CheckHitKey(KEY_INPUT_LEFT) && !player.AttackFlag_2 && !player.AttackFlag)
+    if ((CheckHitKey(KEY_INPUT_LEFT) || input.ThumbLX < -20000) && !player.AttackFlag_2 && !player.AttackFlag)
     {
         //移動
         player.direction = VGet(-1, 0, 0);
@@ -330,7 +333,7 @@ bool UpdatePlayer(Player& player, Boss& boss, Map& map, float deltaTime)
         player.Move_L = false;
     }
     //右
-    if (CheckHitKey(KEY_INPUT_RIGHT) && !player.AttackFlag_2 && !player.AttackFlag)
+    if ((CheckHitKey(KEY_INPUT_RIGHT) || input.ThumbLX > 20000) && !player.AttackFlag_2 && !player.AttackFlag)
     {
         //移動
         player.direction = VGet(1, 0, 0);
@@ -347,7 +350,7 @@ bool UpdatePlayer(Player& player, Boss& boss, Map& map, float deltaTime)
     }
 
     //回避
-    if (CheckHitKey(KEY_INPUT_C) && player.DashTimer == 0)
+    if ((CheckHitKey(KEY_INPUT_C) || input.Buttons[XINPUT_BUTTON_RIGHT_SHOULDER]) && player.DashTimer == 0)
     {
         player.DashFlag = true;
         player.DashTimer = DashCoolTime;
@@ -362,7 +365,7 @@ bool UpdatePlayer(Player& player, Boss& boss, Map& map, float deltaTime)
     }
 
     //攻撃ボタンが押されたらフラグをTRUEにする
-    if (CheckHitKey(KEY_INPUT_X) && !player.AttackFlag && player.AttackIntervalTimer_1 == 0 && player.AttackIntervalTimer_2 == 0 && !player.JumpAttackFlag && !player.PrevAttackFlag)
+    if ((CheckHitKey(KEY_INPUT_X) || input.Buttons[XINPUT_BUTTON_X]) && !player.AttackFlag && player.AttackIntervalTimer_1 == 0 && player.AttackIntervalTimer_2 == 0 && !player.JumpAttackFlag && !player.PrevAttackFlag)
     {
         player.AttackFlag = true;
 
@@ -371,7 +374,7 @@ bool UpdatePlayer(Player& player, Boss& boss, Map& map, float deltaTime)
             player.JumpAttackFlag = true;
         }
     }
-    else if (CheckHitKey(KEY_INPUT_X) && !player.AttackFlag_2 && player.AttackFlag && (player.AttackIntervalTimer_1 > 0 && player.AttackIntervalTimer_1 < 35) && !player.JumpAttackFlag_2 && !player.PrevAttackFlag)
+    else if ((CheckHitKey(KEY_INPUT_X) || input.Buttons[XINPUT_BUTTON_X]) && !player.AttackFlag_2 && player.AttackFlag && (player.AttackIntervalTimer_1 > 0 && player.AttackIntervalTimer_1 < 35) && !player.JumpAttackFlag_2 && !player.PrevAttackFlag)
     {
         player.AttackFlag_2 = true;
         if (!player.isGround)
@@ -381,7 +384,7 @@ bool UpdatePlayer(Player& player, Boss& boss, Map& map, float deltaTime)
     }
 
     //攻撃ボタン長押し防止
-    if (CheckHitKey(KEY_INPUT_X))
+    if (CheckHitKey(KEY_INPUT_X) || input.Buttons[XINPUT_BUTTON_X])
     {
         player.PrevAttackFlag = true;
     }
@@ -425,14 +428,14 @@ bool UpdatePlayer(Player& player, Boss& boss, Map& map, float deltaTime)
     }
 
     //地面に接地しているかつスペースキーが押されたときジャンプする
-    if (CheckHitKey(KEY_INPUT_Z) && !player.AttackFlag && player.isGround && !player.PrevJumpFlag)
+    if ((CheckHitKey(KEY_INPUT_Z) || input.Buttons[XINPUT_BUTTON_A]) && !player.AttackFlag && player.isGround && !player.PrevJumpFlag)
     {
         player.fallSpeed = -JumpPower;
         player.isGround = false;
     }
 
     //ジャンプボタン長押し防止
-    if (CheckHitKey(KEY_INPUT_Z))
+    if (CheckHitKey(KEY_INPUT_Z) || input.Buttons[XINPUT_BUTTON_A])
     {
         player.PrevJumpFlag = true;
     }
@@ -492,7 +495,7 @@ bool UpdatePlayer(Player& player, Boss& boss, Map& map, float deltaTime)
 //プレイヤーがマップに当たっているか
 bool IsHitPlayerWithMapChip(const Player& player, const MapChip& mapChip, VECTOR& futurePos)
 {
-    if (mapChip.chipKind < 22)
+    if (mapChip.chipKind < 22 || mapChip.chipKind > 38)
     {
         return false;
     }
@@ -695,6 +698,7 @@ void controlHP(Player& player,Boss& boss)
         player.invincibleTime = InvincibleTime;
         player.HitEnemy = false;
     }
+
     //ボスの攻撃がプレイヤーに当たったとき
     if (player.invincibleTime == 0 && boss.AttackFlag && boss.HitAttack && !HitEnemyAttack)
     {
@@ -702,6 +706,7 @@ void controlHP(Player& player,Boss& boss)
         player.invincibleTime = InvincibleTime;
         HitEnemyAttack = true;
     }
+
     if (!boss.AttackFlag)
     {
         HitEnemyAttack = false;

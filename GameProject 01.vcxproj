@@ -132,6 +132,8 @@
   <ItemGroup>
     <ClCompile Include="boss.cpp" />
     <ClCompile Include="collision.cpp" />
+    <ClCompile Include="Debug.cpp" />
+    <ClCompile Include="Efect.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="map.cpp" />
     <ClCompile Include="player.cpp" />
@@ -139,6 +141,8 @@
   <ItemGroup>
     <ClInclude Include="Boss.h" />
     <ClInclude Include="collision.h" />
+    <ClInclude Include="Debug.h" />
+    <ClInclude Include="Efect.h" />
     <ClInclude Include="map.h" />
     <ClInclude Include="player.h" />
     <ClInclude Include="screen.h" />

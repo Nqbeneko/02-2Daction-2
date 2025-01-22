@@ -1,4 +1,12 @@
 #pragma once
+const int BossHP = 15;
+const float ANGLE = 45.0f;
+const float BossSpeed = 2.0f;
+
+const int BossHpPositionX = 800 / 2 - ((BossHP * 20) / 2);
+const int BossHpPositionY = 430;
+
+const int BossHpLength = BossHP * 20 + 1;
 
 //----------------------------
 // Bossアニメーション
@@ -27,36 +35,86 @@ const int SummonAnimBoss = 5;       // 召喚モーション数
 const int PreliminaryActionAnimBoss = 8;    //攻撃予備動作
 
 //----------------------------
+// Boss関連
+//----------------------------
+const int PositionMid_X = 400;          //中央X
+const int PositionMid_Y = 176;          //中央Y
+const int PositionMidUp_X = 400;        //中央上X
+const int PositionMidUp_Y = 50;         //中央上Y
+const int PositionMidDown_X = 400;      //中央下X
+const int PositionMidDown_Y = 312;      //中央下Y
+const int PositionMidLeft_X = 62;       //中央左X
+const int PositionMidLeft_Y = 176;      //中央左Y
+const int PositionMidRight_X = 736;     //中央右X
+const int PositionMidRight_Y = 176;     //中央右Y
+const int PositionUpLeft_X = 62;        //左上X
+const int PositionUpLeft_Y = 50;        //左上Y
+const int PositionUpRight_X = 736;      //右上X
+const int PositionUpRight_Y = 50;       //右上Y
+const int PositionDownLeft_X = 62;      //左下X
+const int PositionDownLeft_Y = 312;     //左下Y
+const int PositionDownRight_X = 736;    //右下X
+const int PositionDownRight_Y = 312;    //右下Y
+
+//----------------------------
+// 魂アニメーション関連
+//----------------------------
+
+const int IdleSoul = 0;
+const int AppearSoul = 1;
+const int DethSoul = 2;
+
+const int SoulIdleX = 4;
+const int SoulIdleY = 1;
+const int SoulAppearX = 3;
+const int SoulAppearY = 2;
+const int SoulDethX = 3;
+const int SoulDethY = 2;
+
+const int IdleAnimSoul = 4;
+const int AppearAinmSoul = 6;
+const int DethAnimSoul = 5;
+
+const int MaxSoulNum = 4;
+
+//----------------------------
 // エフェクト関連
 //----------------------------
 
 const int AttackEfect = 0;
 const int RushEfect = 1;
 
-enum class BossState
+enum BossState
 {
     Idele,      // 待機
-    Attack,     // 攻撃１
+    AttackScythe,     // 攻撃１
     Rush,      // 突進攻撃
-    Summon,     // 弾を召喚し打つ
+    SummonSoul,     // 弾を召喚し打つ
     Dead        // 死んでる
 };
 
-struct Efect
+
+
+struct Position
 {
-    int EfectGraph[6][7];
-    //アニメーション関連
-    float animTimer;        // アニメーションタイマー
-    int animNowType;        // 現在のアニメーションの種類
-    int animNowPattern;     // 現在のアニメーションパターン
-    int animPattern;        // 現在のアニメーション画像数
-    int animNowIndex;       // 現在のアニメーション画像配列の添え字(0～112)
-    int animPastType;       // 1つ前のアニメーション画像数
+    VECTOR Mid;         //中央
+    VECTOR MidUp;       //中央上
+    VECTOR MidDown;     //中央下
+    VECTOR MidLeft;     //中央左
+    VECTOR MidRight;    //中央右
+    VECTOR UpLeft;      //左上
+    VECTOR UpRight;     //右上
+    VECTOR DownLeft;    //左下
+    VECTOR DownRight;   //右下
+    int LRM;             //攻撃開始方向(0->左,1->右,2->中央)
+    int Elevation;      //攻撃開始位置の高さ(0->上、1->中央、2->下)
 };
 
 struct Boss
 {
-    BossState state;
+    int state;
+    Position nextPos;
+    
 
     VECTOR pos;             // 座標
     VECTOR direction;       // 方向
@@ -67,8 +125,9 @@ struct Boss
     int HP;                 // 体力
     bool RightMove;         // 
     int BossGraph[5][13];   // ボスモーション画像
+    int DamageGraph[5][13]; //攻撃を受けたときのボス画像
 
-    VECTOR EnemyToPlayer;
+    VECTOR EnemyToTarget;
 
     int RigorTime;          //攻撃後硬直時間
 
@@ -78,25 +137,37 @@ struct Boss
     float radius;
     bool MoveArcFlag;
 
+    //攻撃切り替え用
+    int SwitchingTime;
+    bool SwitchFlag;
+
     //通常攻撃関連
     bool Attack_ON;
     bool AttackFlag;
     bool HitAttack;             //ボスの攻撃が当たったかどうか
     bool PreliminaryActionFlag;
     int PreliminaryActionTimer; //予備動作時間
-   
+    int AttackCount;            //攻撃回数（3回行ったら終了）
 
     //突進攻撃関連
     VECTOR PastPlayerPos;
+    VECTOR TargetPos;
     bool Rush_ON;
     bool Conflict;
-    int RushTimer;
+    int Rush_PreliminaryActionTimer;    //予備動作時間
     int RushCount;
 
+    bool RushHomePos;       //突進攻撃に移った後固定の位置へ移動したか
+    bool RushAttackNow;     //突進しているか
+    bool SetNextTarget;     //次の目標位置が決まったか
+
+    //プレイヤーからの攻撃を受けたとき光るフラグ
+    bool FlashingBoss;
 
     //召喚、弾攻撃関連
     bool Summon_ON;
-
+    bool SummonHomePos;
+    int SummonEndCount;
 
     //アニメーション関連
     float animTimer;        // アニメーションタイマー
@@ -109,9 +180,16 @@ struct Boss
 
 struct Soul
 {
+    VECTOR SoulToPlayer;    // 魂からプレイヤーへのベクトル
     VECTOR pos;             // 座標
     VECTOR direction;       // 方向
     float w, h;             // 縦横幅
+
+    int StandbyTime;
+    bool PresenceFlag;      // 画面上に存在しているかのフラグ
+    bool ReserveFlag;       // 魂が出現し終わったかのフラグ
+    bool ShotFlag;
+   
 
     float animTimer;        // アニメーションタイマー
     int animNowType;        // 現在のアニメーションの種類
@@ -131,13 +209,21 @@ struct Player;
 
 void InitBoss(Boss& boss);
 
-void InitSoul(Soul& soul);
+void InitSoul(Soul soul[]);
 
-void UpdateBoss(Boss& boss, Soul& soul, Player& player, float deltaTime);
+void UpdateBoss(Boss& boss, Soul soul[],Player& player, float deltaTime);
 
 void UpdateAnimationBoss(Boss& boss,float deltaTime);
 
-void DrawBoss(Boss& boss, Soul& soul,Player&player);
+void UpdateSoul(Soul soul[], Boss& boss, Player& player);
+
+void UpdateAnimationSoul(Soul soul[], float deltaTime);
+
+void OffScreenSoul(Soul soul[]);
+
+void DrawBoss(Boss& boss);
+
+void DrawSoul(Soul soul[]);
 
 void DrawBossUI(Boss& boss);
 
@@ -151,8 +237,9 @@ void UpdateBossAttack(Boss& boss, Player& player, float deltaTime);
 
 void UpdateBossRush(Boss& boss, Player& player, float deltaTime);
 
-void UpdateBossSummon(Boss& boss, float deltaTime);
+void DeterminePosition(Boss& boss);
+
+void UpdateBossSummon(Boss& boss, Player& player,Soul soul[], float deltaTime);
 
 void ControlHP(Boss& boss);
 
-void ControlBoss(Boss& boss);

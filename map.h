@@ -21,7 +21,7 @@ struct Map
 {
 	MapChip MapChips[MapHeight][MapWidth];
 	int mapChipImg[49];
-	int BacScreenImg[4];
+	int BacScreenImg[6];
 };
 
 struct sMapLayer

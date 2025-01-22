@@ -63,7 +63,7 @@ void UpdateBossAttackCollision(Collision& boss1_L, Collision& boss1_R, Collision
 {
     if (boss.RightMove && boss.AttackFlag)
     {
-        boss1_L.PosLeft = boss.pos.x - 80.0f;
+        boss1_L.PosLeft = boss.pos.x - 120.0f;
         boss1_L.PosRight = boss.pos.x - 10.0f;
         boss1_L.PosTop = boss.pos.y - 50.0f;
         boss1_L.PosBottom = boss.pos.y + 50.0f;
@@ -72,7 +72,7 @@ void UpdateBossAttackCollision(Collision& boss1_L, Collision& boss1_R, Collision
     if (!boss.RightMove && boss.AttackFlag)
     {
         boss1_R.PosLeft = boss.pos.x + 10.0f;
-        boss1_R.PosRight = boss.pos.x + 80.0f;
+        boss1_R.PosRight = boss.pos.x + 120.0f;
         boss1_R.PosTop = boss.pos.y - 50.0f;
         boss1_R.PosBottom = boss.pos.y + 50.0f;
         DrawBox(boss1_R.PosLeft, boss1_R.PosTop, boss1_R.PosRight, boss1_R.PosBottom, GetColor(0, 0, 255), FALSE);
@@ -175,4 +175,45 @@ bool UpdateHitBossAttack(Collision& boss1_L, Collision& boss1_R, Player& player,
         }
         return false;
     }
+}
+
+bool UpdateHitBossShot(Soul soul[], Player& player)
+{
+    float soulPosLeft[4];
+    float soulPosRight[4];
+    float soulPosTop[4];
+    float soulPosBottom[4];
+
+    for (int i = 0; i < MaxSoulNum; i++)
+    {
+        //ボスの当たり判定位置
+        soulPosLeft[i] = soul[i].pos.x - soulCollminusW;
+        soulPosRight[i] = soul[i].pos.x + soulCollplusW;
+        soulPosTop[i] = soul[i].pos.y - soulCollminusH;
+        soulPosBottom[i] = soul[i].pos.y + soulCollplusH;
+    }
+    
+    //プレイヤーの当たり判定位置
+    float playerPosLeft = player.pos.x - 10.0f;
+    float playerPosRight = player.pos.x + 10.0f;
+    float playerPosTop = player.pos.y - 16.0f;
+    float playerPosBottom = player.pos.y + 16.0f;
+
+    for (int i = 0; i < MaxSoulNum; i++)
+    {
+        if (soul[i].PresenceFlag)
+        {
+            if (((soulPosLeft[i] < playerPosLeft && playerPosLeft < soulPosRight[i]) ||
+                (soulPosLeft[i] > playerPosLeft && soulPosLeft[i] < playerPosRight)) &&
+                ((soulPosTop[i] <= playerPosTop && playerPosTop < soulPosBottom[i]) ||
+                    (soulPosTop[i] > playerPosTop && soulPosTop[i] < playerPosBottom)))
+            {
+                soul[i].PresenceFlag = false;
+                soul[i].ShotFlag = false;
+                return true;
+            }
+        }
+        
+    }
+    return false;
 }

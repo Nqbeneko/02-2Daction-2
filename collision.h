@@ -1,5 +1,13 @@
 #pragma once
 
+const float soulCollminusH = 13.0f;
+const float soulCollplusH = 20.0f;
+
+const float soulCollminusW = 10.0f;
+const float soulCollplusW = 8.0f;
+
+
+
 struct Collision
 {
     float PosLeft;
@@ -10,6 +18,7 @@ struct Collision
 
 struct Player;
 struct Boss;
+struct Soul;
 
 /// <summary>
 /// プレイヤー攻撃当たり判定初期化
@@ -72,3 +81,13 @@ bool UpdateHitPlayerAttack(Collision& playerCol_L, Collision& playerCol_R, Playe
 /// <param name="boss"></param>
 /// <returns></returns>
 bool UpdateHitBossAttack(Collision& boss1_L, Collision& boss1_R, Player& player, Boss& boss);
+
+/// <summary>
+/// ボスの弾攻撃とプレイヤーの当たり判定
+/// </summary>
+/// <param name="soul"></param>
+/// <param name="player"></param>
+/// <returns></returns>
+bool UpdateHitBossShot(Soul soul[], Player& player);
+
+void m();

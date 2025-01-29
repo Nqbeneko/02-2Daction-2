@@ -22,6 +22,7 @@ const int HP1GageSizeX = 30;
 const int HP1GageSizeY = 10;
 
 const int TimerDecrease = 1;            //タイマーの時間を減らす量
+
 //プレイヤーアニメーション画像の分割数
 const int PlayerImg_Xnum = 14;              // 1つのアニメーションのパターン数
 const int PlayerImg_Ynum = 8;               // アニメーションの種類数
@@ -35,6 +36,7 @@ const int Jump_Animation     = 4;           //ジャンプ
 const int Fall_Animation     = 5;           //落ちる
 const int Hit_Animation      = 6;           //敵の攻撃を受けたとき
 const int Die_Animation      = 7;           //HPが0になったとき
+const int Dash_Animation     = 8;           //回避
 
 //それぞれのアニメーションのパターン数,fps数
 const int IDLE       = 8;
@@ -45,6 +47,7 @@ const int JUMP       = 4;
 const int FALL       = 4;
 const int HIT        = 2;
 const int DIE        = 14;
+const int Dash       = 5;
 
 const float animationFPS = 5.0f;
 
@@ -75,6 +78,8 @@ struct Player
     int HpGraph;
     int HpGraphBack;
 
+    int nameGraph;
+
     //-----------------------------
     // 当たり判定に関する変数
     //-----------------------------
@@ -87,9 +92,10 @@ struct Player
     // 回避に関する変数
     //-----------------------------
 
-    bool DashFlag;
-    int DashTimer;
-
+    bool DashFlag;              //ダッシュが開始されたか
+    int DashTimer;              //
+    float Distans;              //ダッシュした距離
+    int DashAnimGraph[Dash];       //ダッシュ画像
 
     //-----------------------------
     // 攻撃に関する変数
@@ -125,6 +131,7 @@ struct Player
     int PlayerAnimation[PlayerImg_Xnum * PlayerImg_Ynum]; //プレイヤーの画像ハンドル
     int PlayerAnimationDamage[PlayerImg_Xnum * PlayerImg_Ynum]; //プレイヤーダメージを受けたときの画像
     //向いている方向で描画の向きを変える
+    
     bool Graph_LR;
 
     //進行方向
@@ -139,6 +146,8 @@ struct Player
 struct Map;
 struct MapChip;
 struct Boss;
+struct Effect;
+
 /// <summary>
 /// プレイヤー初期化
 /// </summary>
@@ -150,7 +159,7 @@ void InitPlayer(Player &player);
 /// </summary>
 /// <param name="player">プレイヤー構造体</param>
 /// <param name="deltaTime">デルタタイム</param>
-void UpdateAnimationPlayer(Player& player, Boss& boss, Map& map, float deltaTime, XINPUT_STATE &input);
+void UpdateAnimationPlayer(Player& player, Boss& boss, Map& map, float deltaTime, XINPUT_STATE &input, Effect& effect);
 
 /// <summary>
 /// プレイヤー描画
@@ -172,7 +181,7 @@ void FinalizePlayer();
 /// <param name="player">プレイヤー構造体</param>
 /// <param name="deltaTime">デルタタイム</param>
 /// <returns>動いているかの判定</returns>
-bool UpdatePlayer(Player& player,Boss&boss, Map& map, float deltaTime, XINPUT_STATE input);
+bool UpdatePlayer(Player& player,Boss&boss, Map& map, float deltaTime, XINPUT_STATE input, Effect& effect);
 
 
 bool IsHitPlayerWithMapChip(const Player& player, const MapChip& mapChip, VECTOR& futurePos);

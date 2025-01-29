@@ -36,7 +36,7 @@ void ControlBoss(Boss& boss)
         boss.state = BossState::Dead;
     }
 
-    DrawFormatString(50, 50, GetColor(255, 0, 0), "%d", boss.RushCount);
+    
 
 }
 
@@ -100,6 +100,7 @@ void SelectDrawManageUI(Player& player ,Boss& boss,Soul soul[])
 
     if (Flag)
     {
+        DrawFormatString(50, 50, GetColor(255, 0, 0), "%d", boss.RushCount);
         //プレイヤー攻撃の当たり判定
         DrawBox(player.pos.x - 32.0f, player.pos.y - 16.0f, player.pos.x + 32.0f, player.pos.y + 16.0f, GetColor(255, 125, 0), FALSE);
         //プレイヤーの当たり判定
@@ -113,8 +114,8 @@ void SelectDrawManageUI(Player& player ,Boss& boss,Soul soul[])
         DrawBox(static_cast<int>(boss.pos.x - 125.0f), static_cast<int>(boss.pos.y - 50.0f),
             static_cast<int>(boss.pos.x + 125.0f), static_cast<int>(boss.pos.y + 50.0f), GetColor(255, 0, 0), FALSE);
         //ボスの当たり判定
-        DrawBox(static_cast<int>(boss.pos.x - 25.0f), static_cast<int>(boss.pos.y - 35.0f),
-            static_cast<int>(boss.pos.x + 25.0f), static_cast<int>(boss.pos.y + 35.0f), GetColor(0, 255, 0), FALSE);
+        DrawBox(static_cast<int>(boss.pos.x - 25.0f), static_cast<int>(boss.pos.y - 50.0f),
+            static_cast<int>(boss.pos.x + 25.0f), static_cast<int>(boss.pos.y + 70.0f), GetColor(0, 255, 0), FALSE);
 
         DrawBossPosition(boss);
 

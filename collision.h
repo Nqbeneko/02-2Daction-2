@@ -56,12 +56,12 @@ void UpdateBossAttackCollision(Collision& boss1_L, Collision& boss1_R, Collision
 
 
 /// <summary>
-/// 敵とプレイヤーの当たり判定
+/// 敵の突進攻撃とプレイヤーの当たり判定
 /// </summary>
 /// <param name="boss"></param>
 /// <param name="player"></param>
 /// <returns></returns>
-bool UpdateHitBox(Boss& boss, Player& player);
+bool UpdateHitBossRush(Boss& boss, Player& player);
 
 /// <summary>
 /// 敵とプレイヤーの攻撃の当たり判定

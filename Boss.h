@@ -18,6 +18,8 @@ const int Attack = 1;
 const int Skill = 2;
 const int Summon = 3;
 const int PreliminaryAction = 4;
+const int Appearance = 5;
+const int Deth = 6;
 
 const int IdleAnimBossX = 4;        // 待機画像分割枚数(横)
 const int IdleAnimBossY = 2;        // 待機画像分割枚数(縦)
@@ -27,12 +29,18 @@ const int SkillAnimBossX = 6;       // スキル画像分割枚数(横)
 const int SkillAnimBossY = 2;       // スキル画像分割枚数(縦)
 const int SummonAnimBossX = 4;      // 召喚画像分割枚数(横)
 const int SummonAnimBossY = 2;      // 召喚画像分割枚数(縦)
+const int AppearanceAnimBossX = 19; // 出現画像分割枚数(横)
+const int AppearanceAnimBossY = 1;  // 出現画像分割枚数(縦)
+const int DethAnimBossX = 10; // 出現画像分割枚数(横)
+const int DethAnimBossY = 2;  // 出現画像分割枚数(縦)
 
 const int IdleAnimBoss = 8;         // 待機モーション数
 const int AttackAnimBoss = 13;      // 攻撃モーション数
 const int SkillAnimBoss = 12;       // スキルモーション数
 const int SummonAnimBoss = 5;       // 召喚モーション数
 const int PreliminaryActionAnimBoss = 8;    //攻撃予備動作
+const int AppearanceAnimBoss = 19;   //出現アニメーション数
+const int DethAnimBoss = 18;         //死亡アニメーション数
 
 //----------------------------
 // Boss関連
@@ -86,14 +94,13 @@ const int RushEfect = 1;
 
 enum BossState
 {
-    Idele,      // 待機
-    AttackScythe,     // 攻撃１
-    Rush,      // 突進攻撃
-    SummonSoul,     // 弾を召喚し打つ
-    Dead        // 死んでる
+    Idele,              // 待機
+    AttackScythe,       // 攻撃１
+    Rush,               // 突進攻撃
+    SummonSoul,         // 弾を召喚し打つ
+    Appear,             //出現
+    Dead               // 死んでる
 };
-
-
 
 struct Position
 {
@@ -124,8 +131,9 @@ struct Boss
     float moveSpeed;        // 移動速度
     int HP;                 // 体力
     bool RightMove;         // 
-    int BossGraph[5][13];   // ボスモーション画像
+    int BossGraph[7][19];   // ボスモーション画像
     int DamageGraph[5][13]; //攻撃を受けたときのボス画像
+    int UIGraph[5];
 
     VECTOR EnemyToTarget;
 
@@ -140,7 +148,7 @@ struct Boss
     //攻撃切り替え用
     int SwitchingTime;
     bool SwitchFlag;
-
+    bool SwitchingTimeFlag;
     //通常攻撃関連
     bool Attack_ON;
     bool AttackFlag;
@@ -168,6 +176,11 @@ struct Boss
     bool Summon_ON;
     bool SummonHomePos;
     int SummonEndCount;
+    
+    //出現、死亡アニメーション関連
+    bool Appear_ON;
+    bool Deth_ON;
+
 
     //アニメーション関連
     float animTimer;        // アニメーションタイマー
@@ -240,6 +253,8 @@ void UpdateBossRush(Boss& boss, Player& player, float deltaTime);
 void DeterminePosition(Boss& boss);
 
 void UpdateBossSummon(Boss& boss, Player& player,Soul soul[], float deltaTime);
+
+void UpdateAppear(Boss& boss,float deltaTime);
 
 void ControlHP(Boss& boss);
 

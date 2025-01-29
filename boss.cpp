@@ -23,6 +23,9 @@ void InitBoss(Boss& boss)
     LoadDivGraph("img/Boss/skill1.png", SkillAnimBoss, SkillAnimBossX, SkillAnimBossY, 100, 100, boss.BossGraph[2]);
     LoadDivGraph("img/Boss/summon.png", SummonAnimBoss, SummonAnimBossX, SummonAnimBossY, 100, 100, boss.BossGraph[3]);
     LoadDivGraph("img/Boss/PreliminaryAction.png", IdleAnimBoss, IdleAnimBossX, IdleAnimBossY, 100, 100, boss.BossGraph[4]);
+    LoadDivGraph("img/Boss/Appearance0.png", AppearanceAnimBoss, AppearanceAnimBossX, AppearanceAnimBossY, 100, 100, boss.BossGraph[5]);
+    LoadDivGraph("img/Boss/death.png", DethAnimBoss, DethAnimBossX, DethAnimBossY, 100, 100, boss.BossGraph[6]);
+
     //ダメージを受けたときのボスモーション
     LoadDivGraph("img/Boss/idle2_damageRed.png", IdleAnimBoss, IdleAnimBossX, IdleAnimBossY, 100, 100, boss.DamageGraph[0]);
     LoadDivGraph("img/Boss/attacking_damageRed.png", AttackAnimBoss, AttackAnimBossX, AttackAnimBossY, 100, 100, boss.DamageGraph[1]);
@@ -30,25 +33,30 @@ void InitBoss(Boss& boss)
     LoadDivGraph("img/Boss/summon_damageRed.png", SummonAnimBoss, SummonAnimBossX, SummonAnimBossY, 100, 100, boss.DamageGraph[3]);
     LoadDivGraph("img/Boss/idle2_damageRed.png", IdleAnimBoss, IdleAnimBossX, IdleAnimBossY, 100, 100, boss.DamageGraph[4]);
 
+    //UI関連
+    boss.UIGraph[0] = LoadGraph("img/font/BOSS name.png", FALSE);
 
     boss.w = BossChipSize;
     boss.h = BossChipSize;
-	boss.pos = VGet(668 + boss.w * 0.5f, 220 + boss.h * 0.5f, 0);
+	boss.pos = VGet(PositionMid_X, PositionMid_Y, 0);
 	boss.direction = VGet(0, 0, 0);
     boss.center = VGet(ScreenWidth / 2, 0, 0);
     boss.HP = BossHP;
 
-    boss.state = BossState::Idele;
+    boss.state = BossState::Appear;
 
     //攻撃切り替え用
     boss.SwitchingTime = 0;
     boss.SwitchFlag = false;
+    boss.SwitchingTimeFlag = false;
 
     // 行動が始まったかどうかのフラグ
     boss.Idle_ON = false;
     boss.Attack_ON = false;
     boss.Rush_ON = false;
     boss.Summon_ON = false;
+    boss.Appear_ON = false;
+    boss.Deth_ON = false;
 
     boss.EnemyToTarget = VGet(0, 0, 0);
 
@@ -99,12 +107,13 @@ void InitBoss(Boss& boss)
     //アニメーション関連
     boss.RightMove = false;
     boss.moveSpeed = BossSpeed;
+
     boss.animTimer = 0;
-    boss.animNowType = Idle;
+    boss.animNowType = Appearance;
     boss.animNowIndex = 0;
     boss.animNowPattern = 0;
-    boss.animPattern = IdleAnimBoss;
-    boss.animPastType = Idle;
+    boss.animPattern = AppearanceAnimBoss;
+    boss.animPastType = Appearance;
 }
 
 void InitSoul(Soul soul[])
@@ -147,29 +156,38 @@ void UpdateBoss(Boss& boss, Soul soul[], Player& player, float deltaTime)
 
     if (boss.state == BossState::Idele)
     {
-        if (boss.state == BossState::Idele && !boss.SwitchFlag && boss.SwitchingTime <= 0)
+        if (boss.SwitchingTime > 0)
         {
-            boss.SwitchingTime = 150;
+              boss.SwitchingTime -= 1;
         }
         
 
-        if (boss.SwitchingTime > 0)
+        if (!boss.SwitchFlag && !boss.SwitchingTimeFlag)
         {
-            boss.SwitchingTime -= 1;
+            boss.SwitchingTime = 150;
+            boss.SwitchingTimeFlag = true;
         }
-        
-        if(boss.SwitchingTime == 0)
+
+        if(boss.SwitchingTime <= 0)
         {
             boss.SwitchingTime = 0;
             boss.SwitchFlag = true;
         }
 
-
         if (boss.SwitchFlag)
         {
-            radNum = GetRand(2);
+            while (true)
+            {
+                radNum = GetRand(2);
+                if (radNum + 1 != 0)
+                {
+                    break;
+                }
+            }
+            
             boss.state = radNum + 1;
             boss.SwitchFlag = false;
+            boss.SwitchingTimeFlag = false;
         }
         
     }
@@ -180,6 +198,8 @@ void UpdateBoss(Boss& boss, Soul soul[], Player& player, float deltaTime)
         boss.Attack_ON = false;
         boss.Rush_ON = false;
         boss.Summon_ON = false;
+        boss.Appear_ON = false;
+        boss.Deth_ON = false;
     }
 
     if (player.pos.x > boss.pos.x && boss.RigorTime <= 0)
@@ -208,9 +228,15 @@ void UpdateBoss(Boss& boss, Soul soul[], Player& player, float deltaTime)
     case BossState::SummonSoul:
         UpdateBossSummon(boss, player, soul, deltaTime);
         break;
+       
+    case BossState::Appear:
+        UpdateAppear(boss, deltaTime);
+        break;
 
     case BossState::Dead:
+
         break;
+
     default:
         break;
     }
@@ -224,34 +250,37 @@ void UpdateBoss(Boss& boss, Soul soul[], Player& player, float deltaTime)
     //------------------------------------
     // ボスHP管理
     //-----------------------------------
-    
-    if (player.AttackFlag && player.HitAttack && !OneHit1)
+    if (boss.state != BossState::Appear && boss.state != BossState::Dead)
     {
-        boss.HP -= 1;
-        boss.FlashingBoss = true;
-        OneHit1 = true;
-    }
-    if (!player.AttackFlag)
-    {
-        
-        OneHit1 = false;
-    }
+        if (player.AttackFlag && player.HitAttack && !OneHit1)
+        {
+            boss.HP -= 1;
+            boss.FlashingBoss = true;
+            OneHit1 = true;
+        }
+        if (!player.AttackFlag)
+        {
 
-    if (player.AttackFlag_2 && player.HitAttack && !OneHit2)
-    {
-        boss.HP -= 1;
-        boss.FlashingBoss = true;
-        OneHit2 = true;
+            OneHit1 = false;
+        }
+
+        if (player.AttackFlag_2 && player.HitAttack && !OneHit2)
+        {
+            boss.HP -= 1;
+            boss.FlashingBoss = true;
+            OneHit2 = true;
+        }
+        if (!player.AttackFlag_2)
+        {
+
+            OneHit2 = false;
+        }
+        if (boss.HP <= 0)
+        {
+            boss.HP = 0;
+        }
     }
-    if (!player.AttackFlag_2)
-    {
-       
-        OneHit2 = false;
-    }
-    if (boss.HP <= 0)
-    {
-        boss.HP = 0;
-    }
+    
 }
 
 void UpdateAnimationBoss(Boss& boss, float deltaTime)
@@ -265,20 +294,38 @@ void UpdateAnimationBoss(Boss& boss, float deltaTime)
         boss.animNowPattern = 0;
     }
 
-    //ボスアニメーション
-    boss.animTimer += deltaTime;
-    if (boss.animTimer > 1.0f / boss.animPattern)
+    if (boss.state == BossState::Appear || boss.state == BossState::Dead)
     {
+        //ボスアニメーション
+        boss.animTimer += 1.0f/60.0f;
+        if (boss.animTimer > (1.0f / 60.0f) * 6)
+        {
 
-        boss.animTimer = 0.0f;
-        boss.animNowPattern++;
-        if (boss.animNowPattern == boss.animPattern)
-        {
-            boss.animNowPattern = 0;
+            boss.animTimer = 0.0f;
+            boss.animNowPattern++;
+            if (boss.animNowPattern == boss.animPattern)
+            {
+                boss.animNowPattern = boss.animPattern;
+            }
         }
-        if (boss.FlashingBoss)
+    }
+    else
+    {
+        //ボスアニメーション
+        boss.animTimer += deltaTime;
+        if (boss.animTimer > 1.0f / boss.animPattern)
         {
-            boss.FlashingBoss = false;
+
+            boss.animTimer = 0.0f;
+            boss.animNowPattern++;
+            if (boss.animNowPattern == boss.animPattern)
+            {
+                boss.animNowPattern = 0;
+            }
+            if (boss.FlashingBoss)
+            {
+                boss.FlashingBoss = false;
+            }
         }
     }
     boss.animNowIndex = boss.animNowPattern;
@@ -310,14 +357,6 @@ void DrawBoss(Boss& boss)
     }
    
 
-    
-    
-    //DrawBox(static_cast<int>(boss.pos.x - 80.0f), static_cast<int>(boss.pos.y - 50.0f), static_cast<int>(boss.pos.x + 80.0f), static_cast<int>(boss.pos.y + 50.0f), GetColor(255, 125, 0), FALSE);
-
-    //DrawCircle(boss.center.x, boss.center.y, 10, GetColor(255, 0, 0), TRUE);
-    //DrawLine(boss.center.x, boss.center.y, boss.pos.x, boss.pos.y, GetColor(255, 255, 255), TRUE);
-  
-
 }
 
 void DrawSoul(Soul soul[])
@@ -327,8 +366,6 @@ void DrawSoul(Soul soul[])
         if (soul[i].PresenceFlag)
         {
             DrawRotaGraph3(static_cast<int>(soul[i].pos.x), static_cast<int>(soul[i].pos.y), soul[i].w * 0.5f, soul[i].h * 0.5f, 1.5f, 1.5f, 0, SoulGraph[soul[i].animNowType][soul[i].animNowIndex], TRUE, FALSE);
-            
-            
         }
     }
     
@@ -337,11 +374,12 @@ void DrawSoul(Soul soul[])
 void DrawBossUI(Boss& boss)
 {
     //ボスHPの表示
-    DrawBox(BossHpPositionX - 1, BossHpPositionY - 1, BossHpPositionX + BossHpLength,BossHpPositionY + 11, GetColor(0, 0, 0), TRUE);
-    DrawBox(BossHpPositionX, BossHpPositionY, BossHpPositionX + (boss.HP * 20), BossHpPositionY + 10, GetColor(255, 0, 0), TRUE);
+    DrawBox(BossHpPositionX - 1, BossHpPositionY - 1, BossHpPositionX + BossHpLength,BossHpPositionY + 16, GetColor(0, 0, 0), TRUE);
+    DrawBox(BossHpPositionX, BossHpPositionY, BossHpPositionX + (boss.HP * 20), BossHpPositionY + 15, GetColor(255, 0, 0), TRUE);
     //名前の表示
     SetFontSize(20);
-    DrawFormatString(BossHpPositionX + BossHpLength / 2 - 20, BossHpPositionY - 20, GetColor(255, 255, 255), "BOSS");
+   // DrawFormatString(BossHpPositionX + BossHpLength / 2 - 20, BossHpPositionY - 20, GetColor(255, 255, 255), "BOSS");
+    DrawGraph(BossHpPositionX + BossHpLength / 2 - 50, BossHpPositionY - 30, boss.UIGraph[0], TRUE);
 }
 
 void MoveArc(Boss& boss)
@@ -424,6 +462,7 @@ void UpdateBossAttack(Boss& boss, Player& player,float deltaTime)
     {
         boss.animNowType = Idle;
         boss.animPattern = IdleAnimBoss;
+        boss.AttackCount = 0;
         boss.Attack_ON = true;
     }
 
@@ -624,6 +663,7 @@ void UpdateBossRush(Boss& boss, Player& player, float deltaTime)
             boss.RushAttackNow = false;
             boss.SetNextTarget = false;
         }
+        player.HitEnemy = UpdateHitBossRush(boss, player);
     }
 
     if (boss.RushCount > 4)
@@ -906,6 +946,21 @@ void UpdateAnimationSoul(Soul soul[], float deltaTime)
         
     }
    
+}
+
+void UpdateAppear(Boss& boss, float deltaTime)
+{
+    if (!boss.Appear_ON)
+    {
+        boss.animNowType = Appearance;
+        boss.animPattern = AppearanceAnimBoss;
+    }
+
+    if (boss.animNowPattern == boss.animPattern - 1)
+    {
+        boss.state = BossState::Idele;
+    }
+    UpdateAnimationBoss(boss, deltaTime);
 }
 
 void ControlHP(Boss& boss)

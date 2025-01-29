@@ -2,15 +2,17 @@
 //　2Dアクションゲーム　プログラム
 //  開始日→2024/10/23
 //------------------------------------------------------------------
-#include"DxLib.h"
-#include"screen.h"
-#include"player.h"
-#include"map.h"
-#include"Boss.h"
-#include"collision.h"
-#include"Debug.h"
-#include"Efect.h"
-
+#include "DxLib.h"
+#include "screen.h"
+#include "player.h"
+#include "map.h"
+#include "Boss.h"
+#include "collision.h"
+#include "Debug.h"
+#include "Effect.h"
+#include "GameOver.h"
+#include "Start.h"
+#include "GameClear.h"
 
 static int mStartTime;      //測定開始時刻
 static int mCount;          //カウンタ
@@ -34,6 +36,7 @@ bool Update() {
 }
 
 void DrawFps() {
+	SetFontSize(10);
 	DrawFormatString(0, 0, GetColor(255, 255, 255), "%.1f", mFps);
 }
 
@@ -50,6 +53,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	XINPUT_STATE input;
 	// DxLib初期化
 	SetGraphMode(ScreenWidth, ScreenHeight, 16);
+	//ChangeWindowMode(true);
 	ChangeWindowMode(false);
 	if (DxLib_Init() == -1)
 	{
@@ -57,14 +61,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	}
 	SetDrawScreen(DX_SCREEN_BACK);
 
-	
-
-
 	Player player;
 	Map map;
 	Boss boss;
 	Soul soul[MaxSoulNum];
-	Efect bossEfect;
+	Effect bossEffect;
+	Effect playerEffect;
+
+	GameClear* clear = new GameClear;
+	GameOver* over = new GameOver;
+	Start* start = new Start;
 
 	Collision Col_playerAttack_L;
 	Collision Col_playerAttack_R;
@@ -78,7 +84,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		SETTING,
 		GAME,
 		OVER,
-		CREAR
+		CLEAR
 	};
 	
 	struct Scene
@@ -98,8 +104,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	InitSoul(soul);
 	InitPlayerAttackCollision(Col_playerAttack_L, Col_playerAttack_R);
 	InitBossAttackCollision(Col_bossAttack1_L, Col_bossAttack1_R,Col_bossAttack2);
-	InitBossEfect(bossEfect);
-
+	InitBossEffect(bossEffect);
+	InitPlayerEffect(playerEffect);
+	over->Init();
+	start->Init();
+	clear->Init();
 
 	int nowCount, prevCount;
 	nowCount = prevCount = GetNowCount();
@@ -126,14 +135,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		switch (sceneSelect.mode)
 		{
 		case GameMode::TITLE:
+			DrawMap(map);
+
 			//タイトル画面を表示
 			SetFontSize(50);
-			DrawString(ScreenWidth / 2 - 50 / 2 * 12 / 2, ScreenHeight / 3, "DARK SAMURAI", GetColor(255, 69, 0));
+			DrawString(ScreenWidth / 2 - 50 / 2 * 12 / 2, ScreenHeight / 4, "DARK SAMURAI", GetColor(0, 0, 0));
 			//スタートボタンを点滅させる
 			if (timer % 60 < 30)
 			{
 				SetFontSize(30);
-				DrawString(ScreenWidth / 2 - 30 / 2 * 21 / 2, ScreenHeight * 2 / 3, "Press SPACE to start.", GetColor(238, 130, 238));
+				DrawString(ScreenWidth / 2 - 30 / 2 * 21 / 2, ScreenHeight * 2 / 3, "Press START to start.", GetColor(238, 238, 238));
 			}
 			
 			if (CheckHitKey(KEY_INPUT_SPACE) || input.Buttons[XINPUT_BUTTON_START])
@@ -148,7 +159,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 				InitSoul(soul);
 				InitPlayerAttackCollision(Col_playerAttack_L, Col_playerAttack_R);
 				InitBossAttackCollision(Col_bossAttack1_L, Col_bossAttack1_R, Col_bossAttack2);
-				InitBossEfect(bossEfect);
+				InitBossEffect(bossEffect);
+				InitPlayerEffect(playerEffect);
+				over->Init();
+				start->Init();
+				clear->Init();
+
 			}
 			break;
 
@@ -156,23 +172,35 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			break;
 
 		case GameMode::GAME:
-			
+			//------------------------------------------------------
+			// GAMEモードが呼ばれて最初に行う処理
+			//------------------------------------------------------
+			if (!start->StartFlag)
+			{
+				start->Progress(player,boss,map);
+			}
+
 			//------------------------------------------------------
 			// 更新処理
 			//------------------------------------------------------
 			DrawMap(map);
-			//プレイヤーの攻撃とボスの当たり判定
-			player.HitAttack = UpdateHitPlayerAttack(Col_playerAttack_L, Col_playerAttack_R, player, boss);
-			boss.HitAttack = UpdateHitBossAttack(Col_bossAttack1_L, Col_bossAttack1_R, player, boss);
+			if (start->StartFlag)
+			{
+				//プレイヤーの攻撃とボスの当たり判定
+				player.HitAttack = UpdateHitPlayerAttack(Col_playerAttack_L, Col_playerAttack_R, player, boss);
+				boss.HitAttack = UpdateHitBossAttack(Col_bossAttack1_L, Col_bossAttack1_R, player, boss);
 
-			UpdatePlayerAttackCollision(Col_playerAttack_L, Col_playerAttack_R, player);
-			UpdateBossAttackCollision(Col_bossAttack1_L, Col_bossAttack1_R, Col_bossAttack2, boss);
+				UpdatePlayerAttackCollision(Col_playerAttack_L, Col_playerAttack_R, player);
+				UpdateBossAttackCollision(Col_bossAttack1_L, Col_bossAttack1_R, Col_bossAttack2, boss);
 
-			UpdateAnimationPlayer(player, boss, map, deltaTime,input);
-			UpdateBoss(boss,soul, player,deltaTime);
-			BossRushPreliminaryAction(bossEfect, boss);
+				UpdateAnimationPlayer(player, boss, map, deltaTime, input, playerEffect);
+				UpdateBoss(boss, soul, player, deltaTime);
+				BossRushPreliminaryAction(bossEffect, boss);
 
-			UpdateAnimationSoul(soul, deltaTime);
+				UpdateAnimationSoul(soul, deltaTime);
+			}
+			
+				
 			//------------------------------------------------------
 			// 描画処理
 			//------------------------------------------------------		
@@ -184,17 +212,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			DrawFps();
 			DrawPlayerUI(player);
 			DrawBossUI(boss);
-			DrawBossEfect(bossEfect, boss);
+			DrawBossEfect(bossEffect, boss);
 
 			SelectDrawManageUI(player, boss, soul);
-			if (player.HitAttack)
+			/*if (player.HitAttack)
 			{
 				DrawFormatString(50, 50, GetColor(255, 255, 255), "ヒットー");
 			}
 			if (boss.HitAttack)
 			{
 				DrawFormatString(50, 50, GetColor(0, 0, 255), "ヒットー");
-			}
+			}*/
 			//------------------------------------------------------
 			if (player.HP <= 0)
 			{
@@ -202,32 +230,46 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			}
 			if (boss.HP <= 0)
 			{
-				sceneSelect.mode = GameMode::CREAR;
+				sceneSelect.mode = GameMode::CLEAR;
 			}
 
 			//------------------------------------------------------
 			// デバック用
 			//------------------------------------------------------
-			
+			if (CheckHitKey(KEY_INPUT_G))
+			{
+				sceneSelect.mode = GameMode::OVER;
+			}
+			if (CheckHitKey(KEY_INPUT_H))
+			{
+				sceneSelect.mode = GameMode::CLEAR;
+			}
 			//DrawBossPosition(boss);
 
 			break;
 
 		case GameMode::OVER:
-			//タイトル画面を表示
-			SetFontSize(50);
-			DrawString(ScreenWidth / 2 - 50 / 2 * 12 / 2, ScreenHeight / 3, "GAME OVER", GetColor(255, 0, 0));
+			
+			over->Progress(player);
+			
+
 			if (CheckHitKey(KEY_INPUT_R) || input.Buttons[XINPUT_BUTTON_BACK])
 			{
 				sceneSelect.mode = GameMode::TITLE;
 			}
 			break;
 
-		case GameMode::CREAR:
-			//タイトル画面を表示
-			SetFontSize(50);
-			DrawString(ScreenWidth / 2 - 50 / 2 * 12 / 2, ScreenHeight / 3, "GAME CLEAR", GetColor(0, 255, 0));
+		case GameMode::CLEAR:
+
+			clear->Progress(player, boss, map,deltaTime);
+			if (clear->GetStopTimer() > 50.0f)
+			{
+				UpdateAnimationPlayer(player, boss, map, deltaTime, input, playerEffect);
+			}
 			
+			
+			
+			DrawPlayer(player);
 			if (CheckHitKey(KEY_INPUT_R) || input.Buttons[XINPUT_BUTTON_BACK])
 			{
 				sceneSelect.mode = GameMode::TITLE;
@@ -245,7 +287,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 		Wait();		//Fps待機
 	}
-
+	
+	delete start;
+	delete over;
+	delete clear;
 	DxLib_End;
 	return 0;
 

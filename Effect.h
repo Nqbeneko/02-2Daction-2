@@ -2,10 +2,13 @@
 
 const int RushEyeEfect = 0;
 
+const int DashEffect = 0;
+const int DashPatternNum = 14;
 
-struct Efect
+
+struct Effect
 {
-    int Graph[6][7];
+    int Graph[6][16];
     //アニメーション関連
     float animTimer;        // アニメーションタイマー
     int animNowType;        // 現在のアニメーションの種類
@@ -16,9 +19,16 @@ struct Efect
 };
 
 struct Boss;
+struct Player;
 
-void InitBossEfect(Efect& efect);
+void InitBossEffect(Effect& efect);
 
-void BossRushPreliminaryAction(Efect& efect,Boss&boss);
+void InitPlayerEffect(Effect& playeffect);
 
-void DrawBossEfect(Efect& efect, Boss& boss);
+void BossRushPreliminaryAction(Effect& effect,Boss& boss);
+
+void UpdatePlayerDashEfect(Effect& effect, Player& player);
+
+void DrawBossEfect(Effect& effect, Boss& boss);
+
+void DrawPlayerDashEffect(Effect& effect, Player& player);

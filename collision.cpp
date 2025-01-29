@@ -45,7 +45,7 @@ void UpdatePlayerAttackCollision(Collision& playerCol_L, Collision& playerCol_R,
         playerCol_L.PosRight    = player.pos.x;
         playerCol_L.PosTop      = player.pos.y - 16.0;
         playerCol_L.PosBottom   = player.pos.y + 16.0f;
-        DrawBox(playerCol_L.PosLeft, playerCol_L.PosTop, playerCol_L.PosRight, playerCol_L.PosBottom, GetColor(0, 0, 255), FALSE);
+        //DrawBox(playerCol_L.PosLeft, playerCol_L.PosTop, playerCol_L.PosRight, playerCol_L.PosBottom, GetColor(0, 0, 255), FALSE);
     }
     if ((player.AttackFlag || player.AttackFlag_2) && !player.Graph_LR)
     {
@@ -53,7 +53,7 @@ void UpdatePlayerAttackCollision(Collision& playerCol_L, Collision& playerCol_R,
         playerCol_R.PosRight    = player.pos.x + 32.0f;
         playerCol_R.PosTop      = player.pos.y - 16.0f;
         playerCol_R.PosBottom   = player.pos.y + 16.0f;
-        DrawBox(playerCol_R.PosLeft, playerCol_R.PosTop, playerCol_R.PosRight, playerCol_R.PosBottom, GetColor(0, 0, 255), FALSE);
+        //DrawBox(playerCol_R.PosLeft, playerCol_R.PosTop, playerCol_R.PosRight, playerCol_R.PosBottom, GetColor(0, 0, 255), FALSE);
     }
     
 }
@@ -67,7 +67,7 @@ void UpdateBossAttackCollision(Collision& boss1_L, Collision& boss1_R, Collision
         boss1_L.PosRight = boss.pos.x - 10.0f;
         boss1_L.PosTop = boss.pos.y - 50.0f;
         boss1_L.PosBottom = boss.pos.y + 50.0f;
-        DrawBox(boss1_L.PosLeft, boss1_L.PosTop, boss1_L.PosRight, boss1_L.PosBottom, GetColor(0, 0, 255), FALSE);
+        //DrawBox(boss1_L.PosLeft, boss1_L.PosTop, boss1_L.PosRight, boss1_L.PosBottom, GetColor(0, 0, 255), FALSE);
     }
     if (!boss.RightMove && boss.AttackFlag)
     {
@@ -75,7 +75,7 @@ void UpdateBossAttackCollision(Collision& boss1_L, Collision& boss1_R, Collision
         boss1_R.PosRight = boss.pos.x + 120.0f;
         boss1_R.PosTop = boss.pos.y - 50.0f;
         boss1_R.PosBottom = boss.pos.y + 50.0f;
-        DrawBox(boss1_R.PosLeft, boss1_R.PosTop, boss1_R.PosRight, boss1_R.PosBottom, GetColor(0, 0, 255), FALSE);
+        //DrawBox(boss1_R.PosLeft, boss1_R.PosTop, boss1_R.PosRight, boss1_R.PosBottom, GetColor(0, 0, 255), FALSE);
     }
 
     /*if (boss.AttackFlag)
@@ -88,19 +88,22 @@ void UpdateBossAttackCollision(Collision& boss1_L, Collision& boss1_R, Collision
 }
 
 //敵とプレイヤーの当たり判定
-bool UpdateHitBox(Boss& boss, Player& player)
+bool UpdateHitBossRush(Boss& boss, Player& player)
 {
 
     //ボスの当たり判定位置
-    float bossPosLeft   = boss.pos.x - 25.0f;
-    float bossPosRight  = boss.pos.x + 25.0f;
-    float bossPosTop    = boss.pos.y - 35.0f;
-    float bossPosBottom = boss.pos.y + 35.0f;
+    float bossPosLeft   = boss.pos.x - 50.0f;
+    float bossPosRight  = boss.pos.x + 50.0f;
+    float bossPosTop    = boss.pos.y - 50.0f;
+    float bossPosBottom = boss.pos.y + 70.0f;
     //プレイヤーの当たり判定位置
     float playerPosLeft     = player.pos.x - 10.0f;
     float playerPosRight    = player.pos.x + 10.0f;
     float playerPosTop      = player.pos.y - 16.0f;
     float playerPosBottom   = player.pos.y + 16.0f;
+
+    //ボスの当たり判定
+    //DrawBox(static_cast<int>(bossPosLeft), static_cast<int>(bossPosTop),static_cast<int>(bossPosRight), static_cast<int>(bossPosBottom), GetColor(0, 255, 0), FALSE);
 
     if (((bossPosLeft < playerPosLeft && playerPosLeft < bossPosRight) ||
         (bossPosLeft > playerPosLeft && bossPosLeft < playerPosRight)) &&
@@ -120,8 +123,8 @@ bool UpdateHitPlayerAttack(Collision& playerCol_L, Collision& playerCol_R, Playe
 {
     float targetPosLeft     = boss.pos.x - 25.0f;
     float targetPosRight    = boss.pos.x + 25.0f;
-    float targetPosTop      = boss.pos.y - 35.0f;
-    float targetPosBottom   = boss.pos.y + 35.0f;
+    float targetPosTop      = boss.pos.y - 50.0f;
+    float targetPosBottom   = boss.pos.y + 70.0f;
     if ((player.AttackFlag || player.AttackFlag_2) && player.Graph_LR) {
         if (((targetPosLeft <= playerCol_L.PosLeft && playerCol_L.PosLeft < targetPosRight) ||
             (targetPosLeft > playerCol_L.PosLeft && targetPosLeft < playerCol_L.PosRight)) &&
@@ -201,7 +204,7 @@ bool UpdateHitBossShot(Soul soul[], Player& player)
 
     for (int i = 0; i < MaxSoulNum; i++)
     {
-        if (soul[i].PresenceFlag)
+        if (soul[i].PresenceFlag && !player.DashFlag)
         {
             if (((soulPosLeft[i] < playerPosLeft && playerPosLeft < soulPosRight[i]) ||
                 (soulPosLeft[i] > playerPosLeft && soulPosLeft[i] < playerPosRight)) &&

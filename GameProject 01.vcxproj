@@ -133,28 +133,38 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BGM.cpp" />
     <ClCompile Include="boss.cpp" />
+    <ClCompile Include="BUTTON.cpp" />
     <ClCompile Include="collision.cpp" />
     <ClCompile Include="Debug.cpp" />
     <ClCompile Include="Effect.cpp" />
     <ClCompile Include="GameClear.cpp" />
     <ClCompile Include="GameOver.cpp" />
+    <ClCompile Include="GameTime.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="map.cpp" />
     <ClCompile Include="player.cpp" />
+    <ClCompile Include="SE.cpp" />
     <ClCompile Include="Start.cpp" />
+    <ClCompile Include="TITLE.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BGM.h" />
     <ClInclude Include="Boss.h" />
+    <ClInclude Include="ButtonClass.h" />
     <ClInclude Include="collision.h" />
     <ClInclude Include="Debug.h" />
     <ClInclude Include="Effect.h" />
     <ClInclude Include="GameClear.h" />
     <ClInclude Include="GameOver.h" />
+    <ClInclude Include="GameTime.h" />
     <ClInclude Include="map.h" />
     <ClInclude Include="player.h" />
     <ClInclude Include="screen.h" />
+    <ClInclude Include="SE.h" />
     <ClInclude Include="Start.h" />
+    <ClInclude Include="TITLE.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

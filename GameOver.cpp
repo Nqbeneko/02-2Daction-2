@@ -7,6 +7,7 @@
 #include"Debug.h"
 #include"Effect.h"
 #include"GameOver.h"
+#include"GameTime.h"
 
 void GameOver::Init()
 {
@@ -24,7 +25,7 @@ void GameOver::Init()
     OverFlag = false;
 }
 
-void GameOver::Progress(Player& player)
+void GameOver::Progress(Player& player,Timer* time, int fontHandle1, int fontHandle3)
 {
     if (!OverFlag)
     {
@@ -48,23 +49,24 @@ void GameOver::Progress(Player& player)
     
     if (AnimEnd && OverFlag)
     {
-        Draw();
+        Draw(time,fontHandle1,fontHandle3);
     }
 
 }
 
 
-void GameOver::Draw()
+void GameOver::Draw(Timer* time,int fontHandle1, int fontHandle3)
 {
     if(Scale < 3.0f)
     {
+        
         timer += 1.0f / 60.0f;
         if (timer > 0.5f)
         {
             Scale += 0.03f;
         }
     }
-    DrawBox(0, 0, ScreenWidth, ScreenHeight, GetColor(50, 50, 50), TRUE);
+    
     DrawRotaGraph3(ScreenWidth / 2, ScreenHeight / 3, 201 / 2, 27 / 2, Scale, Scale, 0, Graph, TRUE, FALSE);
     SetFontSize(30);
 
@@ -88,8 +90,15 @@ void GameOver::Draw()
 
             }
         }
+        
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 125);
+        DrawBox(0, 230, 800, 400, GetColor(0,0,0), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
-        DrawString((ScreenWidth / 2 - 30 / 2 * 21 / 2) + addPosX, (ScreenHeight * 2 / 3) + addPosY, "Press BACK to TITLE.", GetColor(238, 238, 238));
+        time->DrawOverTime(fontHandle1);
+        DrawFormatStringToHandle((ScreenWidth / 2 - 130) + addPosX, (ScreenHeight * 2 / 3) + addPosY, GetColor(236, 236, 236), fontHandle3, "Press BACK to TITLE.");
+
+        //DrawString((ScreenWidth / 2 - 30 / 2 * 21 / 2) + addPosX, (ScreenHeight * 2 / 3) + addPosY, "Press BACK to TITLE.", GetColor(238, 238, 238));
     }
     
 }

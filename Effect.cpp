@@ -7,6 +7,9 @@
 
 void InitBossEffect(Effect& effect)
 {
+    effect.posX = 0;
+    effect.posY = 0;
+
     effect.animNowIndex = 0;
     effect.animNowPattern = 0;
     effect.animNowType = RushEyeEfect;
@@ -18,6 +21,9 @@ void InitBossEffect(Effect& effect)
 
 void InitPlayerEffect(Effect& playeffect)
 {
+    playeffect.posX = 0;
+    playeffect.posY = 0;
+
     playeffect.animNowIndex = 0;
     playeffect.animNowPattern = 0;
     playeffect.animNowType = DashEffect;
@@ -74,11 +80,11 @@ void DrawPlayerDashEffect(Effect& effect, Player& player)
 {
     if (!player.Graph_LR)
     {
-        DrawRotaGraph3(player.pos.x - player.Distans, player.pos.y, 64 / 2, 64 / 2, 1, 1, 0, effect.Graph[0][effect.animNowIndex], TRUE, FALSE);
+        DrawRotaGraph3(effect.posX/* - player.Distans*/, effect.posY, 64 / 2, 64 / 2, 0.8, 0.8, 0, effect.Graph[0][effect.animNowIndex], TRUE, FALSE);
     }
     else if(player.Graph_LR)
     {
-        DrawRotaGraph3(player.pos.x + player.Distans, player.pos.y, 64 / 2, 64 / 2, 1, 1, 0, effect.Graph[0][effect.animNowIndex], TRUE, TRUE);
+        DrawRotaGraph3(effect.posX /*+ player.Distans*/, effect.posY, 64 / 2, 64 / 2, 0.8, 0.8, 0, effect.Graph[0][effect.animNowIndex], TRUE, TRUE);
     }
     
 }

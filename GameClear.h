@@ -1,6 +1,7 @@
 #pragma once
 struct Player;
 struct Boss;
+class Timer;
 
 class GameClear
 {
@@ -14,11 +15,14 @@ public:
 
     void Init();
 
-    void Progress(Player& player,Boss& boss,Map& map, float deltaTime);
+    void Progress(Player& player,Boss& boss,Map& map,
+        float deltaTime,Timer* time,int fontHandle1,
+        int fontHandle3);
 
     void DrawDeadBoss(Boss& boss);
 
     bool GetAnimationEnd() { return AnimationEnd; }
+
     int GetStopTimer() { return StopTimer; }
 
 };

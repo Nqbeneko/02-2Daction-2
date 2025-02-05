@@ -1,6 +1,7 @@
 #pragma once
 
 struct Player;
+class Timer;
 
 class GameOver
 {
@@ -20,8 +21,10 @@ private:
 
 public:
     void Init();
-    void Progress(Player& player);
-    void Draw();
+    void Progress(Player& player, Timer* time,int fontHandle1, int fontHandle3);
+    void Draw(Timer* time, int fontHandle1, int fontHandle3);
     void DrawPlayer(Player& player);
     void AnimationPlayer(Player& player);
+
+    bool GetAnimEnd() { return AnimEnd; }
 };

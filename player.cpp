@@ -6,6 +6,7 @@
 #include "Boss.h"
 #include <math.h>
 #include "Effect.h"
+#include "SE.h"
       
 bool HitEnemyAttack = false;	//敵の攻撃に当たったかどうか
 
@@ -88,7 +89,9 @@ void InitPlayer(Player& player)
 #
 
 //プレイヤーアニメーション
-void UpdateAnimationPlayer(Player& player, Boss& boss, Map&map, float deltaTime, XINPUT_STATE &input, Effect& effect)
+void UpdateAnimationPlayer(Player& player, Boss& boss, Map&map, 
+    float deltaTime, XINPUT_STATE &input, Effect& effect, SE* se,
+    Collision& playColL, Collision& playColR)
 {
     //最終的な画像配列の添え字計算
     if (player.DashFlag)
@@ -103,7 +106,7 @@ void UpdateAnimationPlayer(Player& player, Boss& boss, Map&map, float deltaTime,
     //---------------------------------
     // アニメーション計算
     //---------------------------------
-    bool isMove = UpdatePlayer(player,boss,map, deltaTime,input,effect);
+    bool isMove = UpdatePlayer(player,boss,map, deltaTime,input,effect,se);
 
     //-----------------------------------------------------
     // 操作されていないときIdleアニメーションに変更
@@ -215,16 +218,21 @@ void UpdateAnimationPlayer(Player& player, Boss& boss, Map&map, float deltaTime,
     {
         player.AttackFlag = false;
         player.TimerFlag = false;
+        se->Stop(SEnumber::Attack1se);
+        InitPlayerAttackCollision(playColL, playColR);
     }
     //攻撃２
     if (player.AttackTimer_2 != 0)
     {
         player.AttackTimer_2 -= TimerDecrease;
     }
-    else
+    else if(player.AttackTimer == 0)
     {
         player.AttackFlag_2 = false;
         player.TimerFlag_2 = false;
+        se->Stop(SEnumber::Attack2se);
+        InitPlayerAttackCollision(playColL, playColR);
+
     }
 
     //------------------------------
@@ -314,7 +322,8 @@ void DrawPlayerUI(Player& player)
 }
 
 //プレイヤー更新
-bool UpdatePlayer(Player& player, Boss& boss, Map& map, float deltaTime, XINPUT_STATE input,Effect& effect)
+bool UpdatePlayer(Player& player, Boss& boss, Map& map,
+    float deltaTime, XINPUT_STATE input,Effect& effect, SE* se)
 {
     bool isMove = false;
     bool jump = false;
@@ -358,19 +367,6 @@ bool UpdatePlayer(Player& player, Boss& boss, Map& map, float deltaTime, XINPUT_
         player.Move_R = false;
     }
 
-    //回避
-    if ((CheckHitKey(KEY_INPUT_C) || input.Buttons[XINPUT_BUTTON_RIGHT_SHOULDER]) && player.DashTimer == 0 && !player.DashFlag)
-    {
-        player.DashFlag = true;
-        player.AttackFlag = false;
-        player.AttackFlag_2 = false;
-        player.Distans = 0;
-        player.DashTimer = DashCoolTime;
-        player.animNowType = Dash_Animation;
-        player.animPattern = Dash;
-        effect.animNowPattern = 0;
-
-    }
 
     //移動キーが同時押しされたらその場にとどまる
     if (CheckHitKey(KEY_INPUT_RIGHT) && CheckHitKey(KEY_INPUT_LEFT) && !player.AttackFlag_2 && !player.AttackFlag)
@@ -384,7 +380,7 @@ bool UpdatePlayer(Player& player, Boss& boss, Map& map, float deltaTime, XINPUT_
     if ((CheckHitKey(KEY_INPUT_X) || input.Buttons[XINPUT_BUTTON_X]) && !player.AttackFlag && player.AttackIntervalTimer_1 == 0 && player.AttackIntervalTimer_2 == 0 && !player.JumpAttackFlag && !player.PrevAttackFlag)
     {
         player.AttackFlag = true;
-
+        se->Play(SEnumber::Attack1se);
         if (!player.isGround)
         {
             player.JumpAttackFlag = true;
@@ -393,6 +389,8 @@ bool UpdatePlayer(Player& player, Boss& boss, Map& map, float deltaTime, XINPUT_
     else if ((CheckHitKey(KEY_INPUT_X) || input.Buttons[XINPUT_BUTTON_X]) && !player.AttackFlag_2 && player.AttackFlag && (player.AttackIntervalTimer_1 > 0 && player.AttackIntervalTimer_1 < 35) && !player.JumpAttackFlag_2 && !player.PrevAttackFlag)
     {
         player.AttackFlag_2 = true;
+        se->Play(SEnumber::Attack2se);
+
         if (!player.isGround)
         {
             player.JumpAttackFlag_2 = true;
@@ -407,6 +405,23 @@ bool UpdatePlayer(Player& player, Boss& boss, Map& map, float deltaTime, XINPUT_
     else
     {
         player.PrevAttackFlag = false;
+    }
+    //回避
+    if ((CheckHitKey(KEY_INPUT_C) || input.Buttons[XINPUT_BUTTON_RIGHT_SHOULDER]) && player.DashTimer == 0 && !player.DashFlag)
+    {
+        player.DashFlag = true;
+        player.AttackFlag = false;
+        player.AttackFlag_2 = false;
+
+        player.Distans = 0;
+        player.DashTimer = DashCoolTime;
+        player.animNowType = Dash_Animation;
+        player.animPattern = Dash;
+        effect.animNowPattern = 0;
+
+        effect.posX = player.pos.x;
+        effect.posY = player.pos.y;
+        se->Play(SEnumber::Dashse);
     }
 
    
@@ -441,6 +456,7 @@ bool UpdatePlayer(Player& player, Boss& boss, Map& map, float deltaTime, XINPUT_
         if (player.Distans >= DashDistance)
         {
             player.DashFlag = false;
+            se->Stop(SEnumber::Dashse);
         }
 
     }
@@ -452,6 +468,8 @@ bool UpdatePlayer(Player& player, Boss& boss, Map& map, float deltaTime, XINPUT_
         if (player.Distans >= DashDistance)
         {
             player.DashFlag = false;
+            se->Stop(SEnumber::Dashse);
+
         }
     }
 

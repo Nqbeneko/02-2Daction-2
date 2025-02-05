@@ -147,6 +147,8 @@ struct Map;
 struct MapChip;
 struct Boss;
 struct Effect;
+struct Collision;
+class SE;
 
 /// <summary>
 /// プレイヤー初期化
@@ -159,7 +161,9 @@ void InitPlayer(Player &player);
 /// </summary>
 /// <param name="player">プレイヤー構造体</param>
 /// <param name="deltaTime">デルタタイム</param>
-void UpdateAnimationPlayer(Player& player, Boss& boss, Map& map, float deltaTime, XINPUT_STATE &input, Effect& effect);
+void UpdateAnimationPlayer(Player& player, Boss& boss, Map& map,
+    float deltaTime, XINPUT_STATE &input, Effect& effect,SE* se,
+    Collision& playColL, Collision& playColR);
 
 /// <summary>
 /// プレイヤー描画
@@ -181,7 +185,8 @@ void FinalizePlayer();
 /// <param name="player">プレイヤー構造体</param>
 /// <param name="deltaTime">デルタタイム</param>
 /// <returns>動いているかの判定</returns>
-bool UpdatePlayer(Player& player,Boss&boss, Map& map, float deltaTime, XINPUT_STATE input, Effect& effect);
+bool UpdatePlayer(Player& player,Boss&boss, Map& map,
+    float deltaTime, XINPUT_STATE input, Effect& effect, SE* se);
 
 
 bool IsHitPlayerWithMapChip(const Player& player, const MapChip& mapChip, VECTOR& futurePos);

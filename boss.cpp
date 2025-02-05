@@ -375,7 +375,7 @@ void DrawBossUI(Boss& boss)
 {
     //ボスHPの表示
     DrawBox(BossHpPositionX - 1, BossHpPositionY - 1, BossHpPositionX + BossHpLength,BossHpPositionY + 16, GetColor(0, 0, 0), TRUE);
-    DrawBox(BossHpPositionX, BossHpPositionY, BossHpPositionX + (boss.HP * 20), BossHpPositionY + 15, GetColor(255, 0, 0), TRUE);
+    DrawBox(BossHpPositionX, BossHpPositionY, BossHpPositionX + (boss.HP * 20), BossHpPositionY + 15, GetColor(255, 40, 40), TRUE);
     //名前の表示
     SetFontSize(20);
    // DrawFormatString(BossHpPositionX + BossHpLength / 2 - 20, BossHpPositionY - 20, GetColor(255, 255, 255), "BOSS");

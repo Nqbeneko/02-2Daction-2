@@ -53,7 +53,7 @@ void UpdatePlayerAttackCollision(Collision& playerCol_L, Collision& playerCol_R,
         playerCol_R.PosRight    = player.pos.x + 32.0f;
         playerCol_R.PosTop      = player.pos.y - 16.0f;
         playerCol_R.PosBottom   = player.pos.y + 16.0f;
-        //DrawBox(playerCol_R.PosLeft, playerCol_R.PosTop, playerCol_R.PosRight, playerCol_R.PosBottom, GetColor(0, 0, 255), FALSE);
+       // DrawBox(playerCol_R.PosLeft, playerCol_R.PosTop, playerCol_R.PosRight, playerCol_R.PosBottom, GetColor(0, 0, 255), FALSE);
     }
     
 }
@@ -64,18 +64,18 @@ void UpdateBossAttackCollision(Collision& boss1_L, Collision& boss1_R, Collision
     if (boss.RightMove && boss.AttackFlag)
     {
         boss1_L.PosLeft = boss.pos.x - 120.0f;
-        boss1_L.PosRight = boss.pos.x - 10.0f;
+        boss1_L.PosRight = boss.pos.x + 60.0f;
         boss1_L.PosTop = boss.pos.y - 50.0f;
-        boss1_L.PosBottom = boss.pos.y + 50.0f;
-        //DrawBox(boss1_L.PosLeft, boss1_L.PosTop, boss1_L.PosRight, boss1_L.PosBottom, GetColor(0, 0, 255), FALSE);
+        boss1_L.PosBottom = boss.pos.y + 60.0f;
+        DrawBox(boss1_L.PosLeft, boss1_L.PosTop, boss1_L.PosRight, boss1_L.PosBottom, GetColor(0, 0, 255), FALSE);
     }
     if (!boss.RightMove && boss.AttackFlag)
     {
-        boss1_R.PosLeft = boss.pos.x + 10.0f;
+        boss1_R.PosLeft = boss.pos.x - 60.0f;
         boss1_R.PosRight = boss.pos.x + 120.0f;
         boss1_R.PosTop = boss.pos.y - 50.0f;
-        boss1_R.PosBottom = boss.pos.y + 50.0f;
-        //DrawBox(boss1_R.PosLeft, boss1_R.PosTop, boss1_R.PosRight, boss1_R.PosBottom, GetColor(0, 0, 255), FALSE);
+        boss1_R.PosBottom = boss.pos.y + 60.0f;
+        DrawBox(boss1_R.PosLeft, boss1_R.PosTop, boss1_R.PosRight, boss1_R.PosBottom, GetColor(0, 0, 255), FALSE);
     }
 
     /*if (boss.AttackFlag)

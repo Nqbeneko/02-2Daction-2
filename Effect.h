@@ -9,6 +9,9 @@ const int DashPatternNum = 14;
 struct Effect
 {
     int Graph[6][16];
+    int posX;
+    int posY;
+
     //アニメーション関連
     float animTimer;        // アニメーションタイマー
     int animNowType;        // 現在のアニメーションの種類
@@ -16,6 +19,7 @@ struct Effect
     int animPattern;        // 現在のアニメーション画像数
     int animNowIndex;       // 現在のアニメーション画像配列の添え字(0～112)
     int animPastType;       // 1つ前のアニメーション画像数
+
 };
 
 struct Boss;

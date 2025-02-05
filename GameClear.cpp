@@ -8,6 +8,7 @@
 #include"Effect.h"
 #include"GameOver.h"
 #include"GameClear.h"
+#include"GameTime.h"
 
 void GameClear::Init()
 {
@@ -18,11 +19,10 @@ void GameClear::Init()
 	StopTimer = 0;
 }
 
-void GameClear::Progress(Player& player, Boss& boss, Map& map, float deltaTime)
+void GameClear::Progress(Player& player, Boss& boss, Map& map, float deltaTime, Timer* time, int fontHandle1, int fontHandle3)
 {
 	if (!Clear)
-	{
-		
+	{		
 		boss.animNowPattern = 0;
 		boss.animTimer = 0.0f;
 		boss.state = BossState::Dead;
@@ -31,12 +31,12 @@ void GameClear::Progress(Player& player, Boss& boss, Map& map, float deltaTime)
 		AnimationEnd = false;
 	}
 
-	DrawBox(0, 0, ScreenWidth, ScreenHeight, GetColor(225, 225, 225), TRUE);
+	
 
 	
 	if (!AnimationEnd && Clear)
-	{
-		
+	{		
+		DrawBox(0, 0, ScreenWidth, ScreenHeight, GetColor(232, 232, 232), TRUE);
 		DrawDeadBoss(boss);
 		StopTimer += 1.0f;
 		if (StopTimer >= 50.0f)
@@ -49,21 +49,25 @@ void GameClear::Progress(Player& player, Boss& boss, Map& map, float deltaTime)
 				AnimationEnd = true;
 			}
 		}
-
+		DrawPlayer(player);
 	}
 
 	if (AnimationEnd && Clear)
 	{
-		//SetFontSize(50);
-		//DrawString(ScreenWidth / 2 - 50 / 2 * 12 / 2, ScreenHeight / 3, "GAME CLEAR", GetColor(0, 255, 0));
+
+		DrawMap(map);
+		
+		SetDrawBlendMode(DX_BLENDMODE_ALPHA, 125);
+		DrawBox(0, 230, 800, 400, GetColor(0,0,0), TRUE);
+		SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+		DrawPlayer(player);
+
+		time->DrawClearTimeandRank(fontHandle1);
 		DrawRotaGraph3(ScreenWidth / 2, ScreenHeight / 3, 250 / 2, 32 / 2, 3, 3, 0, Graph, TRUE, FALSE);
-		SetFontSize(30);
-		DrawString(ScreenWidth / 2 - 30 / 2 * 21 / 2, ScreenHeight * 2 / 3, "Press BACK to TITLE.", GetColor(10, 10, 10));
-
-
+		
+		DrawFormatStringToHandle(230, ScreenHeight * 2 / 3, GetColor(236, 236, 236), fontHandle3, "Press BACK to TITLE.");
 	}
-
-
 }
 
 

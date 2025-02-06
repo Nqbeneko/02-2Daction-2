@@ -21,7 +21,7 @@ private:
 
 public:
     void Init();
-    void Progress(Player& player, Timer* time,int fontHandle1, int fontHandle3);
+    void Progress(Player& player, Timer* time,int fontHandle1, int fontHandle3,SE* se);
     void Draw(Timer* time, int fontHandle1, int fontHandle3);
     void DrawPlayer(Player& player);
     void AnimationPlayer(Player& player);

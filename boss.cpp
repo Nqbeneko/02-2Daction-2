@@ -5,6 +5,7 @@
 #include"screen.h"
 #include"collision.h"
 #include"Debug.h"
+#include"SE.h"
 
 
 bool OneHit1 = false;
@@ -145,7 +146,7 @@ void InitSoul(Soul soul[])
 
 }
 
-void UpdateBoss(Boss& boss, Soul soul[], Player& player, float deltaTime)
+void UpdateBoss(Boss& boss, Soul soul[], Player& player, float deltaTime, SE* se)
 {
     VECTOR direction = VGet(0, 0, 0);
 
@@ -164,7 +165,7 @@ void UpdateBoss(Boss& boss, Soul soul[], Player& player, float deltaTime)
 
         if (!boss.SwitchFlag && !boss.SwitchingTimeFlag)
         {
-            boss.SwitchingTime = 150;
+            boss.SwitchingTime = 100;
             boss.SwitchingTimeFlag = true;
         }
 
@@ -200,6 +201,7 @@ void UpdateBoss(Boss& boss, Soul soul[], Player& player, float deltaTime)
         boss.Summon_ON = false;
         boss.Appear_ON = false;
         boss.Deth_ON = false;
+        se->AllStopBoss();
     }
 
     if (player.pos.x > boss.pos.x && boss.RigorTime <= 0)
@@ -214,23 +216,23 @@ void UpdateBoss(Boss& boss, Soul soul[], Player& player, float deltaTime)
     switch (boss.state)
     {
     case BossState::Idele:
-        UpdateBossIdle(boss, deltaTime);
+        UpdateBossIdle(boss, deltaTime,se);
         break;
 
     case BossState::AttackScythe:
-        UpdateBossAttack(boss, player, deltaTime);
+        UpdateBossAttack(boss, player, deltaTime,se);
         break;
 
     case BossState::Rush:
-        UpdateBossRush(boss, player, deltaTime);
+        UpdateBossRush(boss, player, deltaTime,se);
         break;
 
     case BossState::SummonSoul:
-        UpdateBossSummon(boss, player, soul, deltaTime);
+        UpdateBossSummon(boss, player, soul, deltaTime,se);
         break;
        
     case BossState::Appear:
-        UpdateAppear(boss, deltaTime);
+        UpdateAppear(boss, deltaTime,se);
         break;
 
     case BossState::Dead:
@@ -445,7 +447,7 @@ void MoveArc(Boss& boss)
     }
 }
 
-void UpdateBossIdle(Boss& boss, float deltaTime)
+void UpdateBossIdle(Boss& boss, float deltaTime, SE* se)
 {
     if (!boss.Idle_ON)
     {
@@ -456,7 +458,7 @@ void UpdateBossIdle(Boss& boss, float deltaTime)
     UpdateAnimationBoss(boss, deltaTime);
 }
 
-void UpdateBossAttack(Boss& boss, Player& player,float deltaTime)
+void UpdateBossAttack(Boss& boss, Player& player,float deltaTime, SE* se)
 {
     if (!boss.Attack_ON)
     {
@@ -506,6 +508,7 @@ void UpdateBossAttack(Boss& boss, Player& player,float deltaTime)
         boss.AttackFlag = true;
         boss.animNowType = Attack;
         boss.animPattern = AttackAnimBoss;
+        se->PlayBoss(BossSEnum::AttackScytheSE);
     }
 
     if (boss.AttackFlag && boss.animNowPattern == boss.animPattern - 1)
@@ -514,6 +517,7 @@ void UpdateBossAttack(Boss& boss, Player& player,float deltaTime)
         boss.animPattern = IdleAnimBoss;
         boss.AttackFlag = false;
         boss.AttackCount += 1;
+        se->StopBoss(BossSEnum::AttackScytheSE);
     }
 
     //硬直時間を減らす
@@ -530,7 +534,7 @@ void UpdateBossAttack(Boss& boss, Player& player,float deltaTime)
 
 }
 
-void UpdateBossRush(Boss& boss, Player& player, float deltaTime)
+void UpdateBossRush(Boss& boss, Player& player, float deltaTime, SE* se)
 {
     if (!boss.Rush_ON)
     {
@@ -570,9 +574,10 @@ void UpdateBossRush(Boss& boss, Player& player, float deltaTime)
     {
         boss.Rush_PreliminaryActionTimer -= 1;
     }
-    else
+    else 
     {
         boss.Rush_PreliminaryActionTimer == 0;
+       
     }
 
 
@@ -645,6 +650,7 @@ void UpdateBossRush(Boss& boss, Player& player, float deltaTime)
         boss.SetNextTarget = true;
         boss.RushAttackNow = true;
         boss.RushCount++;
+        se->PlayBoss(BossSEnum::RushSE);
     }
 
     if (boss.RushAttackNow)
@@ -662,6 +668,7 @@ void UpdateBossRush(Boss& boss, Player& player, float deltaTime)
         {
             boss.RushAttackNow = false;
             boss.SetNextTarget = false;
+            se->StopBoss(BossSEnum::RushSE);
         }
         player.HitEnemy = UpdateHitBossRush(boss, player);
     }
@@ -745,7 +752,7 @@ void DeterminePosition(Boss& boss)
     }
 }
 
-void UpdateBossSummon(Boss& boss, Player& player, Soul soul[], float deltaTime)
+void UpdateBossSummon(Boss& boss, Player& player, Soul soul[], float deltaTime, SE* se)
 {
     if (!boss.Summon_ON)
     {
@@ -782,7 +789,7 @@ void UpdateBossSummon(Boss& boss, Player& player, Soul soul[], float deltaTime)
     if (boss.SummonHomePos)
     {
        
-        UpdateSoul(soul, boss, player);
+        UpdateSoul(soul, boss, player,se);
     }
 
     player.HitEnemy = UpdateHitBossShot(soul, player);
@@ -791,32 +798,35 @@ void UpdateBossSummon(Boss& boss, Player& player, Soul soul[], float deltaTime)
     UpdateAnimationBoss(boss, deltaTime);
 }
 
-void UpdateSoul(Soul soul[], Boss& boss, Player& player)
+void UpdateSoul(Soul soul[], Boss& boss, Player& player, SE* se)
 {
     //弾をボスの周りに出現させる
     for (int i = 0; i < MaxSoulNum; i++) 
     {
         if (!soul[i].PresenceFlag && SoulStandbyTime == 0 && !SoulPresenceAll)
         {
+            
             switch (i)
             {
             case 0:
                 soul[i].pos = VGet(boss.pos.x - 50, boss.pos.y - 50, 0);
+                se->PlayBoss(BossSEnum::SummonSE);
                 break;
             case 1:
                 soul[i].pos = VGet(boss.pos.x + 50, boss.pos.y - 50, 0);
+                se->PlayBoss(BossSEnum::SummonSE);
                 break;
             case 2:
                 soul[i].pos = VGet(boss.pos.x + 50, boss.pos.y + 50, 0);
+                se->PlayBoss(BossSEnum::SummonSE);
                 break;
             case 3:
                 soul[i].pos = VGet(boss.pos.x - 50, boss.pos.y + 50, 0);
+                se->PlayBoss(BossSEnum::SummonSE);
                 break;
             default:
                 break;
             }
-
-            
 
             soul[i].animNowType = AppearSoul;
             soul[i].animPattern = AppearAinmSoul;
@@ -839,12 +849,14 @@ void UpdateSoul(Soul soul[], Boss& boss, Player& player)
         }
         else
         {
+            se->StopBoss(BossSEnum::SummonSE);
             SoulStandbyTime = 0;
         }
     }
 
     if (soul[3].PresenceFlag)
     {
+        
         SoulPresenceAll = true;
         boss.animNowType = Idle;
         boss.animPattern = IdleAnimBoss;
@@ -859,9 +871,11 @@ void UpdateSoul(Soul soul[], Boss& boss, Player& player)
 
             if (!soul[i].ShotFlag && SoulStandbyTime == 0 && soul[i].PresenceFlag)
             {
+                se->PlayBoss(BossSEnum::SoulSE);
                 soul[i].SoulToPlayer = VSub(player.pos, soul[i].pos);
                 soul[i].ShotFlag = true;
                 SoulStandbyTime = 200;
+                
             }
 
             if (soul[i].ShotFlag && soul[i].PresenceFlag)
@@ -883,12 +897,13 @@ void UpdateSoul(Soul soul[], Boss& boss, Player& player)
         }
 
         //弾発射のディレイ
-        if (SoulStandbyTime > 0)
+        if (SoulStandbyTime > 5)
         {
             SoulStandbyTime -= 1;
         }
         else
         {
+            se->StopBoss(BossSEnum::SoulSE);
             SoulStandbyTime = 0;
         }
         //弾が画面外に行ったら表示を消す
@@ -948,16 +963,18 @@ void UpdateAnimationSoul(Soul soul[], float deltaTime)
    
 }
 
-void UpdateAppear(Boss& boss, float deltaTime)
+void UpdateAppear(Boss& boss, float deltaTime, SE* se)
 {
     if (!boss.Appear_ON)
     {
         boss.animNowType = Appearance;
         boss.animPattern = AppearanceAnimBoss;
+        se->PlayBoss(BossSEnum::AppearSE);
     }
 
     if (boss.animNowPattern == boss.animPattern - 1)
     {
+        se->StopBoss(BossSEnum::SoulSE);
         boss.state = BossState::Idele;
     }
     UpdateAnimationBoss(boss, deltaTime);

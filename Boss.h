@@ -219,16 +219,17 @@ struct Mob
 };
 
 struct Player;
+class SE;
 
 void InitBoss(Boss& boss);
 
 void InitSoul(Soul soul[]);
 
-void UpdateBoss(Boss& boss, Soul soul[],Player& player, float deltaTime);
+void UpdateBoss(Boss& boss, Soul soul[],Player& player, float deltaTime,SE* se);
 
 void UpdateAnimationBoss(Boss& boss,float deltaTime);
 
-void UpdateSoul(Soul soul[], Boss& boss, Player& player);
+void UpdateSoul(Soul soul[], Boss& boss, Player& player, SE* se);
 
 void UpdateAnimationSoul(Soul soul[], float deltaTime);
 
@@ -244,17 +245,17 @@ void DrawEfect(Boss& boss);
 
 void MoveArc(Boss& boss);
 
-void UpdateBossIdle(Boss& boss, float deltaTime);
+void UpdateBossIdle(Boss& boss, float deltaTime, SE* se);
 
-void UpdateBossAttack(Boss& boss, Player& player, float deltaTime);
+void UpdateBossAttack(Boss& boss, Player& player, float deltaTime, SE* se);
 
-void UpdateBossRush(Boss& boss, Player& player, float deltaTime);
+void UpdateBossRush(Boss& boss, Player& player, float deltaTime, SE* se);
 
 void DeterminePosition(Boss& boss);
 
-void UpdateBossSummon(Boss& boss, Player& player,Soul soul[], float deltaTime);
+void UpdateBossSummon(Boss& boss, Player& player,Soul soul[], float deltaTime, SE* se);
 
-void UpdateAppear(Boss& boss,float deltaTime);
+void UpdateAppear(Boss& boss,float deltaTime, SE* se);
 
 void ControlHP(Boss& boss);
 

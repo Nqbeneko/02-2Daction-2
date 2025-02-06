@@ -8,6 +8,7 @@
 #include"Effect.h"
 #include"GameOver.h"
 #include"GameTime.h"
+#include"SE.h"
 
 void GameOver::Init()
 {
@@ -25,7 +26,7 @@ void GameOver::Init()
     OverFlag = false;
 }
 
-void GameOver::Progress(Player& player,Timer* time, int fontHandle1, int fontHandle3)
+void GameOver::Progress(Player& player,Timer* time, int fontHandle1, int fontHandle3, SE* se)
 {
     if (!OverFlag)
     {
@@ -34,14 +35,17 @@ void GameOver::Progress(Player& player,Timer* time, int fontHandle1, int fontHan
         player.animPattern = DIE;
         player.animTimer = 0;
         OverFlag = true;
+        se->Play(SEnumber::Diese);
     }
 
     if (!AnimEnd && OverFlag)
     {
+       
         DrawPlayer(player);
         StopTimer += 1.0f;
         if (StopTimer > 20.0f)
         {
+            se->Stop(SEnumber::Diese);
             AnimationPlayer(player);
         }
         
@@ -106,7 +110,7 @@ void GameOver::Draw(Timer* time,int fontHandle1, int fontHandle3)
 
 void GameOver::DrawPlayer(Player& player)
 {
-    DrawBox(0, 0, ScreenWidth, ScreenHeight, GetColor(50, 50, 50), TRUE);
+    //DrawBox(0, 0, ScreenWidth, ScreenHeight, GetColor(50, 50, 50), TRUE);
 
     //キャラクターの描画
     if (!player.Graph_LR)

@@ -163,6 +163,7 @@ void UpdateAnimationPlayer(Player& player, Boss& boss, Map&map,
         player.animPastType = player.animNowType;
         player.animNowPattern = INITNUM;
         player.animTimer = 0.0f;
+        //se->Stop(SEnumber::Runse);
     }
 
     //-------------------------------------------------------------------
@@ -330,7 +331,15 @@ bool UpdatePlayer(Player& player, Boss& boss, Map& map,
 
     player.direction = VGet(0, 0, 0);
 
-       
+    if (player.animNowType == Run_Animation)
+    {
+        se->Play(SEnumber::Runse);
+    }
+    else
+    {
+        se->Stop(SEnumber::Runse);
+    }
+
     //-----------------------------------------------------------------------------
        // 左右移動
        //-----------------------------------------------------------------------------
@@ -343,11 +352,12 @@ bool UpdatePlayer(Player& player, Boss& boss, Map& map,
         player.animNowType = Run_Animation;
         player.animPattern = RUN;
         player.Move_L = true;
-
+        
         isMove = true;
     }
     else
     {
+        
         player.Move_L = false;
     }
     //右
@@ -359,7 +369,7 @@ bool UpdatePlayer(Player& player, Boss& boss, Map& map,
         player.animNowType = Run_Animation;
         player.animPattern = RUN;
         player.Move_R = true;
-
+      
         isMove = true;
     }
     else
@@ -421,6 +431,8 @@ bool UpdatePlayer(Player& player, Boss& boss, Map& map,
 
         effect.posX = player.pos.x;
         effect.posY = player.pos.y;
+        se->Stop(SEnumber::Runse);
+
         se->Play(SEnumber::Dashse);
     }
 
@@ -455,8 +467,8 @@ bool UpdatePlayer(Player& player, Boss& boss, Map& map,
         player.Distans += 10;
         if (player.Distans >= DashDistance)
         {
-            player.DashFlag = false;
             se->Stop(SEnumber::Dashse);
+            player.DashFlag = false;
         }
 
     }
@@ -467,9 +479,8 @@ bool UpdatePlayer(Player& player, Boss& boss, Map& map,
         player.Distans += 10;
         if (player.Distans >= DashDistance)
         {
-            player.DashFlag = false;
             se->Stop(SEnumber::Dashse);
-
+            player.DashFlag = false;
         }
     }
 
@@ -494,6 +505,8 @@ bool UpdatePlayer(Player& player, Boss& boss, Map& map,
     //地面に接地しているかつスペースキーが押されたときジャンプする
     if ((CheckHitKey(KEY_INPUT_Z) || input.Buttons[XINPUT_BUTTON_A]) && !player.AttackFlag && player.isGround && !player.PrevJumpFlag)
     {
+        se->Stop(SEnumber::Runse);
+
         player.fallSpeed = -JumpPower;
         player.isGround = false;
     }

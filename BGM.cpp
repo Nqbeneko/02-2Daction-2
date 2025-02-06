@@ -9,10 +9,10 @@ void BGM::Init()
 	Over_handle = LoadSoundMem("img/BGM/OVER.mp3");
 	Clear_handle = LoadSoundMem("img/BGM/CLEAR.wav");
 
-	ChangeVolumeSoundMem(100, Title_handle);
-	ChangeVolumeSoundMem(80, Game_handle);
-	ChangeVolumeSoundMem(100, Over_handle);
-	ChangeVolumeSoundMem(100, Clear_handle);
+	ChangeVolumeSoundMem(250, Title_handle);
+	ChangeVolumeSoundMem(150, Game_handle);
+	ChangeVolumeSoundMem(200, Over_handle);
+	ChangeVolumeSoundMem(200, Clear_handle);
 
 }
 

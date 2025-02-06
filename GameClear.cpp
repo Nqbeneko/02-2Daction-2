@@ -9,6 +9,7 @@
 #include"GameOver.h"
 #include"GameClear.h"
 #include"GameTime.h"
+#include"SE.h"
 
 void GameClear::Init()
 {
@@ -19,7 +20,7 @@ void GameClear::Init()
 	StopTimer = 0;
 }
 
-void GameClear::Progress(Player& player, Boss& boss, Map& map, float deltaTime, Timer* time, int fontHandle1, int fontHandle3)
+void GameClear::Progress(Player& player, Boss& boss, Map& map, float deltaTime, Timer* time, int fontHandle1, int fontHandle3, SE* se)
 {
 	if (!Clear)
 	{		
@@ -29,24 +30,27 @@ void GameClear::Progress(Player& player, Boss& boss, Map& map, float deltaTime, 
 		boss.FlashingBoss = false;
 		Clear = true;
 		AnimationEnd = false;
+		se->PlayBoss(BossSEnum::DethSE);
 	}
 
-	
-
+    DrawMap(map);
 	
 	if (!AnimationEnd && Clear)
 	{		
-		DrawBox(0, 0, ScreenWidth, ScreenHeight, GetColor(232, 232, 232), TRUE);
+		
+		//DrawBox(0, 0, ScreenWidth, ScreenHeight, GetColor(232, 232, 232), TRUE);
 		DrawDeadBoss(boss);
 		StopTimer += 1.0f;
 		if (StopTimer >= 50.0f)
 		{
+			se->StopBoss(BossSEnum::DethSE); 
 			boss.animNowType = Deth;
 			boss.animPattern = DethAnimBoss;
 			UpdateAnimationBoss(boss, deltaTime);
 			if (boss.animNowPattern == boss.animPattern)
 			{
 				AnimationEnd = true;
+				
 			}
 		}
 		DrawPlayer(player);
@@ -55,7 +59,6 @@ void GameClear::Progress(Player& player, Boss& boss, Map& map, float deltaTime, 
 	if (AnimationEnd && Clear)
 	{
 
-		DrawMap(map);
 		
 		SetDrawBlendMode(DX_BLENDMODE_ALPHA, 125);
 		DrawBox(0, 230, 800, 400, GetColor(0,0,0), TRUE);
@@ -63,10 +66,10 @@ void GameClear::Progress(Player& player, Boss& boss, Map& map, float deltaTime, 
 
 		DrawPlayer(player);
 
-		time->DrawClearTimeandRank(fontHandle1);
+		time->DrawClearTimeandRank(fontHandle1,player);
 		DrawRotaGraph3(ScreenWidth / 2, ScreenHeight / 3, 250 / 2, 32 / 2, 3, 3, 0, Graph, TRUE, FALSE);
 		
-		DrawFormatStringToHandle(230, ScreenHeight * 2 / 3, GetColor(236, 236, 236), fontHandle3, "Press BACK to TITLE.");
+		DrawFormatStringToHandle(270, 350, GetColor(236, 236, 236), fontHandle3, "Press BACK to TITLE.");
 	}
 }
 

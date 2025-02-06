@@ -17,6 +17,7 @@
 #include "SE.h"
 #include "TITLE.h"
 #include "GameTime.h"
+#include "Help.h"
 
 static int mStartTime;      //測定開始時刻
 static int mCount;          //カウンタ
@@ -90,6 +91,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	Timer* time = new Timer;
 
+	Help* help = new Help;
+
 	Collision Col_playerAttack_L;
 	Collision Col_playerAttack_R;
 	Collision Col_bossAttack1_L;
@@ -131,6 +134,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	se->Init();
 	title->Init();
 	time->Init();
+	help->Init();
 
 	int nowCount, prevCount;
 	nowCount = prevCount = GetNowCount();
@@ -162,16 +166,26 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		case GameMode::TITLE:
 
 			DrawMap(map);
+			if (!GetMovieStateToGraph(title->MoveGraph))
+			{
+				bgm->Play(BGMType::Title);
+			}
+			else
+			{
+				bgm->Stop();
+				if (CheckHitKey(KEY_INPUT_F) || input.Buttons[XINPUT_BUTTON_A])
+				{
+					PauseMovieToGraph(title->MoveGraph);
 
-			bgm->Play(BGMType::Title);
+				}
+			}
 
 			//タイトル画面を表示
 			/*SetFontSize(50);
 			DrawString(ScreenWidth / 2 - 50 / 2 * 12 / 2, ScreenHeight / 4, "NIGHT REAPER", GetColor(0, 0, 0));*/
-			title->Progress();
 
 			//スタートボタンを点滅させる
-			if (timer % 60 < 35)
+			if (timer % 30 < 20)
 			{
 				
 				//DrawString(ScreenWidth / 2 - 30 / 2 * 21 / 2, ScreenHeight * 2 / 3 + 60, "Press START to start.", GetColor(238, 238, 238));
@@ -179,9 +193,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 				DrawStringToHandle(ScreenWidth / 2 - 150, ScreenHeight * 2 / 3 + 60, "Press START to GAMEstart.", GetColor(238, 238, 238), fontHandle3);
 			}
 			
-			if (CheckHitKey(KEY_INPUT_SPACE) || input.Buttons[XINPUT_BUTTON_START])
+			title->Progress();
+
+			if ((CheckHitKey(KEY_INPUT_SPACE) || input.Buttons[XINPUT_BUTTON_START]) && !GetMovieStateToGraph(title->MoveGraph))
 			{
 				sceneSelect.mode = GameMode::GAME;
+				se->PlaySystem();
 				//------------------------------------------------------
 				// 初期化
 				//------------------------------------------------------
@@ -198,7 +215,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 				clear->Init();
 				bgm->Stop();
 				time->Init();
-
+				se->SetAllLargeVolume();
+				PauseMovieToGraph(title->MoveGraph);
 			}
 			
 			break;
@@ -208,7 +226,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 		case GameMode::GAME:
 			bgm->Play(BGMType::Game);
-			time->CountTime();
+			
 			//------------------------------------------------------
 			// GAMEモードが呼ばれて最初に行う処理
 			//------------------------------------------------------
@@ -223,6 +241,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			DrawMap(map);
 			if (start->StartFlag)
 			{
+				time->CountTime();
 				//プレイヤーの攻撃とボスの当たり判定
 				player.HitAttack = UpdateHitPlayerAttack(Col_playerAttack_L, Col_playerAttack_R, player, boss);
 				boss.HitAttack = UpdateHitBossAttack(Col_bossAttack1_L, Col_bossAttack1_R, player, boss);
@@ -232,7 +251,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 				UpdateAnimationPlayer(player, boss, map, deltaTime, input, playerEffect,se,
 										Col_playerAttack_L, Col_playerAttack_R);
-				UpdateBoss(boss, soul, player, deltaTime);
+				UpdateBoss(boss, soul, player, deltaTime,se);
 				BossRushPreliminaryAction(bossEffect, boss);
 
 				UpdateAnimationSoul(soul, deltaTime);
@@ -247,14 +266,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			DrawSoul(soul);
 
 			DrawPlayer(player);
-			//DrawFps();
+			DrawFps();
 			DrawPlayerUI(player);
 			DrawBossUI(boss);
 			DrawBossEfect(bossEffect, boss);
 
 			SelectDrawManageUI(player, boss, soul);
 
-			time->DrawTime(fontHandle2);
+			time->DrawTime(fontHandle3);
+			help->DrawHelp(fontHandle2);
 			/*if (player.HitAttack)
 			{
 				DrawFormatString(50, 50, GetColor(255, 255, 255), "ヒットー");
@@ -268,11 +288,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			{
 				sceneSelect.mode = GameMode::OVER;
 				bgm->Stop();
+				se->AllStopBoss();
+				se->AllStopPlayer();
+				se->SetAllLowVolume();
 			}
 			if (boss.HP <= 0)
 			{
 				sceneSelect.mode = GameMode::CLEAR;
 				bgm->Stop();
+				se->AllStopBoss();
+				se->AllStopPlayer();
+				se->SetAllLowVolume();
+
 			}
 
 			//------------------------------------------------------
@@ -282,12 +309,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			{
 				sceneSelect.mode = GameMode::OVER;
 				bgm->Stop();
+				se->AllStopBoss();
+				se->AllStopPlayer();
+				se->SetAllLowVolume();
 
 			}
 			if (CheckHitKey(KEY_INPUT_H))
 			{
 				sceneSelect.mode = GameMode::CLEAR;
 				bgm->Stop();
+				se->AllStopBoss();
+				se->AllStopPlayer();
+				se->SetAllLowVolume();
 
 			}
 			//DrawBossPosition(boss);
@@ -296,19 +329,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 		case GameMode::OVER:
 			DrawMap(map);
-			UpdateBoss(boss, soul, player, deltaTime);
-			BossRushPreliminaryAction(bossEffect, boss);
-			UpdateAnimationSoul(soul, deltaTime);
+			
 			DrawBoss(boss);
 			DrawBossEfect(bossEffect, boss);
 			DrawSoul(soul);
 
 
-			over->Progress(player,time, fontHandle1,fontHandle3);
+			over->Progress(player,time, fontHandle1,fontHandle3,se);
 			
 			if (over->GetAnimEnd())
 			{
-
+				UpdateBoss(boss, soul, player, deltaTime,se);
+				BossRushPreliminaryAction(bossEffect, boss);
+				UpdateAnimationSoul(soul, deltaTime);
 				bgm->Play(BGMType::Over);
 			}
 
@@ -316,12 +349,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			{
 				sceneSelect.mode = GameMode::TITLE;
 				bgm->Stop();
+				se->AllStopBoss();
+				se->AllStopPlayer();
+				se->PlaySystem();
+				title->timer = 0.0f;
 			}
 			break;
 
 		case GameMode::CLEAR:
 			
-			clear->Progress(player, boss, map,deltaTime,time,fontHandle1,fontHandle3);
+			clear->Progress(player, boss, map,deltaTime,time,fontHandle1,fontHandle3,se);
 			
 			if (clear->GetStopTimer() > 50.0f)
 			{
@@ -337,6 +374,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			{
 				sceneSelect.mode = GameMode::TITLE;
 				bgm->Stop();
+				se->AllStopBoss();
+				se->AllStopPlayer();
+				se->PlaySystem();
+				title->timer = 0.0f;
+
 			}
 			
 			break;
@@ -352,13 +394,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		Wait();		//Fps待機
 	}
 	
+	se->Delete();
+	title->Delete();
+
 	delete start;
 	delete over;
 	delete clear;
 	delete title;
 	delete bgm;
 	delete se;
-
+	
 	DxLib_End;
 	return 0;
 

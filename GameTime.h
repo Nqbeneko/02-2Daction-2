@@ -1,5 +1,7 @@
 #pragma once
 
+struct Player;
+
 class Timer
 {
 private:
@@ -14,9 +16,9 @@ public:
 
 	void DrawTime(int fontHandle);
 
-	void DrawClearTimeandRank(int fontHandle);
+	void DrawClearTimeandRank(int fontHandle,Player& player);
 
 	void DrawOverTime(int fontHandle);
 
-	void TimeRank(int fontHandle);
+	void TimeRank(int fontHandle,Player& player);
 };
